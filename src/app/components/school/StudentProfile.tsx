@@ -79,7 +79,7 @@ export function StudentProfile({ student, onClose, onUpdateFees, onUpdateNextOfK
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Gender</p>
-                    <p className="font-semibold">{student.gender}</p>
+                    <p className="font-semibold">{student.studentGender}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="size-4 text-gray-500" />

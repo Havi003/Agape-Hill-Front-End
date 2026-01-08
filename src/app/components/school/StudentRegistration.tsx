@@ -6,21 +6,30 @@ import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
+
+// 1. Define the nested interface first
+export interface FeeStatus {
+  totalBilled: number;
+  totalPaid: number;
+  balance: number;
+}
+
 // Exporting Student interface for use in StudentList.tsx
 export interface Student {
   id: string;
   admissionNumber: string;
   fullName: string;
-  gender: string;
+  studentGender: string;
   dateOfBirth: string;
   studentClass: string;
   nemisNumber: string;
-  balance: number;
+  feeStatus: FeeStatus;
   kinName: string;
   kinRelationship: string;
   kinContact: string;
   kinEmail: string;
   kinAddress: string;
+  registeredDate : Date ;
 }
 
 interface StudentRegistrationProps {

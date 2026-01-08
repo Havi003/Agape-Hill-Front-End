@@ -93,10 +93,10 @@ export function StudentList({ onViewStudent }: StudentListProps) {
                     {student.admissionNumber}
                   </td>
                   <td className="px-6 py-4 font-medium">{student.fullName}</td>
-                  <td className="px-6 py-4">{student.gender}</td>
+                  <td className="px-6 py-4">{student.studentGender}</td>
                   <td className="px-6 py-4 font-semibold">
-                    <span className={student.feeStatus?.balance > 0 ? 'text-red-600' : 'text-green-600'}>
-                      Ksh. {student.feeStatus?.balance?.toLocaleString() || '0.00'}
+                    <span className={student.feeStatus.balance > 0 ? 'text-red-600' : 'text-green-600'}>
+                      Ksh. {student.feeStatus.balance?.toLocaleString() || '0.00'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
