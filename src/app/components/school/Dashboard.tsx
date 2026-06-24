@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Users, UserPlus, GraduationCap, TrendingUp, Search } from 'lucide-react';
+import { Users, UserPlus, GraduationCap, TrendingUp, Search, Calendar } from 'lucide-react';
 import { Card } from '../ui/card';
+import { ImageWithFallback } from '../figma/ImageWithFallback';
+import schoolLogo from '../../imports/school_logo.png';
 
-// Define the structure of your backend "body"
+// Your existing stats interface
 interface DashboardStatsData {
   totalStudents: number;
   maleStudents: number;
   femaleStudents: number;
-  registationsThiMonth: number; // Matches the typo in your backend JSON
+  registrationsThisMonth: number;
   malePercentage: number;
   femalePercentage: number;
+}
+
+// Student response structure matching your backend
+interface StudentItem {
+  id: string;
+  fullName: string;
+  admissionNumber: string;
+  studentGender: string;
+  registeredDate: string;
+  studentClass?: string;
 }
 
 interface DashboardProps {
@@ -18,20 +30,45 @@ interface DashboardProps {
 
 export function Dashboard({ onNavigate }: DashboardProps) {
   const [statsData, setStatsData] = useState<DashboardStatsData | null>(null);
+  const [recentStudents, setRecentStudents] = useState<StudentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('http://localhost:8080/api/students/dashboard-stats')
-      .then((res) => res.json())
-      .then((data) => {
-        setStatsData(data.body);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch dashboard stats", err);
-        setLoading(false);
-      });
-  }, []);
+    useEffect(() => {
+      // Fire off both API requests concurrently
+      Promise.all([
+        fetch('http://localhost:8080/api/students/dashboard-stats').then((res) => res.json()),
+        fetch('http://localhost:8080/api/students').then((res) => res.json())
+      ])
+        .then(([statsRes, studentsRes]) => {
+          setStatsData(statsRes.body);
+          
+          // Extract array from standard backend .body envelope
+          const allStudents: StudentItem[] = studentsRes.body || [];
+          
+          // SORTING LOGIC: High-precision sort by exact Date and Time
+          const sortedStudents = [...allStudents].sort((a, b) => {
+            const timeA = a.registeredDate ? new Date(a.registeredDate).getTime() : 0;
+            const timeB = b.registeredDate ? new Date(b.registeredDate).getTime() : 0;
+            
+            // 1. Sort by precise time (Newest millisecond timestamp first)
+            if (timeB !== timeA) {
+              return timeB - timeA;
+            }
+            
+            // 2. Fallback constraint: If exact same millisecond, sort alphabetically by name
+            return a.fullName.localeCompare(b.fullName);
+          });
+          
+          // Take the 3 most recently added students from the sorted array
+          setRecentStudents(sortedStudents.slice(0, 3));
+          
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Failed to load dashboard data strings", err);
+          setLoading(false);
+        });
+    }, []);
 
   if (loading) return <div className="p-10 text-center text-blue-900 font-semibold">Loading Dashboard...</div>;
 
@@ -39,19 +76,19 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     { title: 'Total Students', value: statsData?.totalStudents || 0, icon: Users, color: 'bg-blue-500', description: 'Registered in the system' },
     { title: 'Male Students', value: statsData?.maleStudents || 0, icon: Users, color: 'bg-green-500', description: `${statsData?.malePercentage.toFixed(1)}% of total` },
     { title: 'Female Students', value: statsData?.femaleStudents || 0, icon: Users, color: 'bg-purple-500', description: `${statsData?.femalePercentage.toFixed(1)}% of total` },
-    { title: 'This Month', value: statsData?.registationsThiMonth || 0, icon: TrendingUp, color: 'bg-orange-500', description: 'New registrations' }
+    { title: 'This Month', value: statsData?.registrationsThisMonth || 0, icon: TrendingUp, color: 'bg-orange-500', description: 'New registrations' }
   ];
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 p-4">
       {/* Welcome Banner */}
-      <Card className="p-8 bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="size-16 bg-white/20 rounded-full flex items-center justify-center">
-            <GraduationCap className="size-10" />
+      <Card className="p-8 bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-xl relative overflow-hidden">
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="size-16 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white/20 p-0.5">
+            <ImageWithFallback src={schoolLogo} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold mb-1">Welcome to Agape Hill Limited</h1>
+            <h1 className="text-2xl font-bold mb-1">Welcome to Agape Hill </h1>
             <p className="text-blue-100">Management System Dashboard</p>
           </div>
         </div>
@@ -74,23 +111,61 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         })}
       </div>
 
-      {/* RE-INSERTED: Recent Registrations and Quick Actions Grid */}
+      {/* Dynamic Data Blocks */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Recent Registrations Section */}
-        <Card className="lg:col-span-2 p-6 flex flex-col items-center justify-center min-h-[300px]">
-          <h2 className="text-xl font-bold mb-4 self-start">Recent Registrations</h2>
-          <div className="text-center py-8">
-            <Users className="size-16 text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No students registered yet</p>
+        {/* DYNAMICALLY FIXED: Recent Registrations Section */}
+        <Card className="lg:col-span-2 p-6 flex flex-col justify-between min-h-[300px]">
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-slate-900">Recent Registrations</h2>
+            
+            {recentStudents.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="size-16 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">No students registered yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {recentStudents.map((student) => (
+                  <div key={student.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center font-bold text-blue-900">
+                        {student.fullName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{student.fullName}</p>
+                        <p className="text-sm text-gray-500">{student.admissionNumber} • {student.studentGender}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+                      <Calendar className="size-3.5" />
+                      <span>
+                        {student.registeredDate && new Date(student.registeredDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {recentStudents.length > 0 && (
+            <button 
+              onClick={() => onNavigate('students-all')}
+              className="mt-4 text-sm font-semibold text-blue-950 hover:text-blue-700 transition-colors text-left border-t pt-4"
+            >
+              View all registered profiles →
+            </button>
+          )}
         </Card>
 
         {/* Quick Actions Section */}
         <Card className="p-6">
           <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
           <div className="space-y-4">
-            {/* Register Student Button */}
             <button
               onClick={() => onNavigate('register')}
               className="w-full flex items-center gap-4 p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors text-left group"
@@ -104,9 +179,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               </div>
             </button>
 
-            {/* RESTORED: View All Students Button */}
             <button
-              onClick={() => onNavigate('students')}
+              onClick={() => onNavigate('students-all')}
               className="w-full flex items-center gap-4 p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors text-left group"
             >
               <div className="size-12 bg-green-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -124,7 +198,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {/* School Motto Section */}
       <Card className="p-6 bg-blue-50 border-l-4 border-blue-900 shadow-sm">
         <p className="text-center text-lg italic text-blue-900 font-medium">
-          "Arise and Shine" - Agape Hill Limited
+          "Arise and Shine" - Agape Hill 
         </p>
       </Card>
     </div>

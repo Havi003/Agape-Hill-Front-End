@@ -34,7 +34,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <GraduationCap className="size-12 text-white" />
           </div>
           <h1 className="text-3xl mb-2 text-blue-900">
-            Agape Hill Limited
+            Agape Hill 
           </h1>
           <p className="text-gray-600">Management System</p>
         </div>

@@ -94,7 +94,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
         // Mapping nested frontend state to the flat DTO the backend expects
         const payload = {
           fullName: formData.fullName,
-          gender: formData.gender,
+          studentGender: formData.gender,
           dateOfBirth: formData.dateOfBirth,
           studentClass: formData.studentClass,
           nemisNumber: formData.nemisNumber,
@@ -158,7 +158,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
         <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-bold text-blue-900 mb-1">Student Registration</h2>
-            <p className="text-gray-600">Enter details to enroll a new student at Agape Hill Limited</p>
+            <p className="text-gray-600">Enter details to enroll a new student at Agape Hill</p>
           </div>
           <div className="size-16 bg-blue-100 rounded-full flex items-center justify-center">
             <GraduationCap className="size-9 text-blue-900" />
@@ -260,9 +260,11 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
           </div>
 
           {/* Section 4: Next of Kin */}
+          {/* Section 4: Next of Kin */}
           <div>
             <h3 className="mb-4 pb-2 border-b border-gray-200 font-bold text-gray-700">Next of Kin Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
               <div className="space-y-2">
                 <Label>Guardian Name *</Label>
                 <Input
@@ -270,7 +272,10 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
                   onChange={(e) => setFormData({ ...formData, nextOfKin: { ...formData.nextOfKin, name: e.target.value } })}
                   className={errors['nextOfKin.name'] ? 'border-red-500' : ''}
                 />
+                {/* ADDED: Error text display */}
+                {errors['nextOfKin.name'] && <p className="text-xs text-red-600">{errors['nextOfKin.name']}</p>}
               </div>
+
               <div className="space-y-2">
                 <Label>Relationship *</Label>
                 <Input
@@ -279,7 +284,10 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
                   onChange={(e) => setFormData({ ...formData, nextOfKin: { ...formData.nextOfKin, relationship: e.target.value } })}
                   className={errors['nextOfKin.relationship'] ? 'border-red-500' : ''}
                 />
+                {/* ADDED: Error text display */}
+                {errors['nextOfKin.relationship'] && <p className="text-xs text-red-600">{errors['nextOfKin.relationship']}</p>}
               </div>
+
               <div className="space-y-2">
                 <Label>Contact Phone *</Label>
                 <Input
@@ -287,7 +295,10 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
                   onChange={(e) => setFormData({ ...formData, nextOfKin: { ...formData.nextOfKin, phoneNumber: e.target.value } })}
                   className={errors['nextOfKin.phoneNumber'] ? 'border-red-500' : ''}
                 />
+                {/* ADDED: Error text display */}
+                {errors['nextOfKin.phoneNumber'] && <p className="text-xs text-red-600">{errors['nextOfKin.phoneNumber']}</p>}
               </div>
+
               <div className="space-y-2">
                 <Label>Email Address</Label>
                 <Input
@@ -296,6 +307,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
                   onChange={(e) => setFormData({ ...formData, nextOfKin: { ...formData.nextOfKin, email: e.target.value } })}
                 />
               </div>
+
               <div className="space-y-2 md:col-span-2">
                 <Label>Physical Address *</Label>
                 <Input
@@ -304,7 +316,10 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
                   onChange={(e) => setFormData({ ...formData, nextOfKin: { ...formData.nextOfKin, address: e.target.value } })}
                   className={errors['nextOfKin.address'] ? 'border-red-500' : ''}
                 />
+                {/* ADDED: Error text display */}
+                {errors['nextOfKin.address'] && <p className="text-xs text-red-600">{errors['nextOfKin.address']}</p>}
               </div>
+
             </div>
           </div>
 
@@ -312,6 +327,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
           <div className="flex gap-4 pt-6 border-t border-gray-200">
             <Button 
               type="submit" 
+              onClick={handleSubmit} // ADDED: Fail-safe click handler
               className="bg-blue-900 hover:bg-blue-800 min-w-[160px]"
               disabled={isSubmitting || isSuccess}
             >

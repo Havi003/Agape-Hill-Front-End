@@ -7,14 +7,46 @@ import { Dashboard } from './components/school/Dashboard';
 import { StudentRegistration, Student } from './components/school/StudentRegistration';
 import { StudentList } from './components/school/StudentList';
 import { StudentProfile } from './components/school/StudentProfile';
+import { EventsManager } from './components/school/EventsManager';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [students, setStudents] = useState<Student[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  // 1. Initialize auth state directly from localStorage so reloads don't break it
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('ahps_authenticated') === 'true';
+  });
 
-  // Generate admission number (format: AHPS2024001)
+  // 2. Initialize currentView from localStorage so reloads keep you on the same page
+  const [currentView, setCurrentView] = useState<string>(() => {
+    return localStorage.getItem('ahps_current_view') || 'dashboard';
+  });
+
+  // 3. Initialize students from localStorage so you don't lose data on reload
+  const [students, setStudents] = useState<Student[]>(() => {
+    const savedStudents = localStorage.getItem('ahps_students');
+    return savedStudents ? JSON.parse(savedStudents) : [];
+  });
+
+  // 4. Initialize selectedStudent from localStorage so profile view survives reloads
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(() => {
+    const savedStudent = localStorage.getItem('ahps_selected_student');
+    return savedStudent ? JSON.parse(savedStudent) : null;
+  });
+
+  // Helper to safely update and persist the students array
+  const saveStudents = (newStudents: Student[]) => {
+    setStudents(newStudents);
+    localStorage.setItem('ahps_students', JSON.stringify(newStudents));
+  };
+
+  // Helper to safely update and persist the active view
+  const handleNavigate = (view: string) => {
+    setCurrentView(view);
+    localStorage.setItem('ahps_current_view', view);
+    setSelectedStudent(null);
+    localStorage.removeItem('ahps_selected_student');
+  };
+
+  // Generate admission number (format: AHPS2026001)
   const generateAdmissionNumber = () => {
     const year = new Date().getFullYear();
     const count = students.length + 1;
@@ -23,13 +55,21 @@ export default function App() {
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    toast.success('Welcome to Agape Hill Limited Management System');
+    localStorage.setItem('ahps_authenticated', 'true');
+    toast.success('Welcome to Agape Hill Management System');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentView('dashboard');
     setSelectedStudent(null);
+    
+    // Clear out session state from localStorage
+    localStorage.removeItem('ahps_authenticated');
+    localStorage.removeItem('ahps_current_view');
+    localStorage.removeItem('ahps_selected_student');
+    localStorage.removeItem('ahps_last_class_view');
+    
     toast.info('You have been logged out');
   };
 
@@ -46,87 +86,88 @@ export default function App() {
       ...studentData
     };
 
-    setStudents([...students, newStudent]);
+    const updatedStudents = [...students, newStudent];
+    saveStudents(updatedStudents);
     
     toast.success(
-      `Student ${newStudent.fullName} successfully added to Agape Hill Limited`,
+      `Student ${newStudent.fullName} successfully added to Agape Hill`,
       {
         description: `Admission Number: ${newStudent.admissionNumber}`
       }
     );
 
-    // Navigate to student profile
+    // Save profile context and navigate to the profile directly
     setSelectedStudent(newStudent);
+    localStorage.setItem('ahps_selected_student', JSON.stringify(newStudent));
     setCurrentView('profile');
+    localStorage.setItem('ahps_current_view', 'profile');
   };
 
+  // UX Fix: Returns to the specific class tier view instead of a generic fallback
   const handleCloseProfile = () => {
     setSelectedStudent(null);
-    setCurrentView('students');
-  };
-
-  const handleNavigate = (view: string) => {
-    setCurrentView(view);
-    setSelectedStudent(null);
+    localStorage.removeItem('ahps_selected_student');
+    
+    const returnView = localStorage.getItem('ahps_last_class_view') || 'students-Grade 1';
+    setCurrentView(returnView);
+    localStorage.setItem('ahps_current_view', returnView);
   };
 
   const handleUpdateFees = (studentId: string, feeUpdate: { totalBilled?: number; totalPaid?: number }) => {
-    setStudents(prevStudents => 
-      prevStudents.map(student => {
-        if (student.id === studentId) {
-          const totalBilled = feeUpdate.totalBilled ?? student.feeStatus.totalBilled;
-          const totalPaid = feeUpdate.totalPaid ?? student.feeStatus.totalPaid;
-          const balance = totalBilled - totalPaid;
-          
-          const updatedStudent = {
-            ...student,
-            feeStatus: {
-              totalBilled,
-              totalPaid,
-              balance
-            }
-          };
-          
-          // Update selected student if it's the one being updated
-          if (selectedStudent?.id === studentId) {
-            setSelectedStudent(updatedStudent);
-          }
-          
-          return updatedStudent;
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        const totalBilled = feeUpdate.totalBilled ?? student.feeStatus.totalBilled;
+        const totalPaid = feeUpdate.totalPaid ?? student.feeStatus.totalPaid;
+        const balance = totalBilled - totalPaid;
+        
+        const updatedStudent = {
+          ...student,
+          feeStatus: { totalBilled, totalPaid, balance }
+        };
+        
+        if (selectedStudent?.id === studentId) {
+          setSelectedStudent(updatedStudent);
+          localStorage.setItem('ahps_selected_student', JSON.stringify(updatedStudent));
         }
-        return student;
-      })
-    );
-    
+        
+        return updatedStudent;
+      }
+      return student;
+    });
+
+    saveStudents(updatedStudents);
     toast.success('Fee status updated successfully');
   };
 
   const handleUpdateNextOfKin = (studentId: string, nextOfKin: Student['nextOfKin']) => {
-    setStudents(prevStudents => 
-      prevStudents.map(student => {
-        if (student.id === studentId) {
-          const updatedStudent = {
-            ...student,
-            nextOfKin
-          };
-          
-          // Update selected student if it's the one being updated
-          if (selectedStudent?.id === studentId) {
-            setSelectedStudent(updatedStudent);
-          }
-          
-          return updatedStudent;
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        const updatedStudent = { ...student, nextOfKin };
+        
+        if (selectedStudent?.id === studentId) {
+          setSelectedStudent(updatedStudent);
+          localStorage.setItem('ahps_selected_student', JSON.stringify(updatedStudent));
         }
-        return student;
-      })
-    );
-    
+        
+        return updatedStudent;
+      }
+      return student;
+    });
+
+    saveStudents(updatedStudents);
     toast.success('Next of kin information updated successfully');
   };
 
   const handleViewStudent = (student: Student) => {
+    // Before switching to profile view, remember what sub-class view we were currently browsing
+    if (currentView.startsWith('students-')) {
+      localStorage.setItem('ahps_last_class_view', currentView);
+    }
+    
     setSelectedStudent(student);
+    localStorage.setItem('ahps_selected_student', JSON.stringify(student));
     setCurrentView('profile');
+    localStorage.setItem('ahps_current_view', 'profile');
   };
 
   // If not authenticated, show login screen
@@ -139,10 +180,9 @@ export default function App() {
     );
   }
 
-  // Main application
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* Sidebar - Dropdown choices flow right through here */}
       <BrandSidebar
         currentView={currentView}
         onNavigate={handleNavigate}
@@ -167,10 +207,11 @@ export default function App() {
             />
           )}
 
-          {currentView === 'students' && (
+          {/* New Architectural Pattern: Captures any view starting with "students-" */}
+          {currentView.startsWith('students-') && (
             <StudentList
-              students={students}
               onViewStudent={handleViewStudent}
+              filterClass={currentView.replace('students-', '')} 
             />
           )}
 
@@ -182,6 +223,10 @@ export default function App() {
               onUpdateNextOfKin={handleUpdateNextOfKin}
             />
           )}
+
+        {currentView === 'events' && (
+           <EventsManager />
+        )}
         </div>
       </div>
 
