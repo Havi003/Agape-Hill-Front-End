@@ -1,9 +1,10 @@
 // src/api/studentApi.ts
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 // Axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/students',
+  baseURL: apiUrl('/students'),
   headers: { 'Content-Type': 'application/json' }
 });
 

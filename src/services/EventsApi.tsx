@@ -1,8 +1,9 @@
 // src/api/eventsApi.ts
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/events',
+  baseURL: apiUrl('/events'),
   headers: { 'Content-Type': 'application/json' }
 });
 

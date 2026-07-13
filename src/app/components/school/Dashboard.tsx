@@ -3,6 +3,7 @@ import { Users, UserPlus, GraduationCap, TrendingUp, Search, Calendar } from 'lu
 import { Card } from '../ui/card';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import schoolLogo from '../../imports/school_logo.png';
+import { apiUrl } from '../../../config/api';
 
 // Your existing stats interface
 interface DashboardStatsData {
@@ -36,8 +37,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     useEffect(() => {
       // Fire off both API requests concurrently
       Promise.all([
-        fetch('http://localhost:8080/api/students/dashboard-stats').then((res) => res.json()),
-        fetch('http://localhost:8080/api/students').then((res) => res.json())
+        fetch(apiUrl('/students/dashboard-stats')).then((res) => res.json()),
+        fetch(apiUrl('/students')).then((res) => res.json())
       ])
         .then(([statsRes, studentsRes]) => {
           setStatsData(statsRes.body);

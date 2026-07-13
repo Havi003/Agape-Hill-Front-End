@@ -4,6 +4,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Student } from './StudentRegistration'; 
+import { apiUrl } from '../../../config/api';
 
 interface StudentListProps {
   onViewStudent: (student: Student) => void;
@@ -24,7 +25,7 @@ export function StudentList({ onViewStudent, filterClass }: StudentListProps) {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8080/api/students');
+        const response = await fetch(apiUrl('/students'));
         const result = await response.json();
 
         if (response.ok && result.header.responseCode === "200") {

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# Local developer configuration. Never commit secrets or credentials.
+.env
+.env.local
+.env.*.local
+
+# Editor and operating-system files
+.DS_Store
+
