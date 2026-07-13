@@ -10,6 +10,7 @@ import { StudentProfile } from './components/school/StudentProfile';
 import { EventsManager } from './components/school/EventsManager';
 
 export default function App() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // 1. Initialize auth state directly from localStorage so reloads don't break it
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('ahps_authenticated') === 'true';
@@ -44,6 +45,7 @@ export default function App() {
     localStorage.setItem('ahps_current_view', view);
     setSelectedStudent(null);
     localStorage.removeItem('ahps_selected_student');
+    setIsMobileMenuOpen(false);
   };
 
   // Generate admission number (format: AHPS2026001)
@@ -181,21 +183,26 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-dvh bg-gray-50 overflow-hidden">
       {/* Sidebar - Dropdown choices flow right through here */}
       <BrandSidebar
         currentView={currentView}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
+        isMobileOpen={isMobileMenuOpen}
+        onMobileClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <IdentityHeader userName="Administrator" />
+        <IdentityHeader
+          userName="Administrator"
+          onMenuOpen={() => setIsMobileMenuOpen(true)}
+        />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
           {currentView === 'dashboard' && (
             <Dashboard students={students} onNavigate={handleNavigate} />
           )}
@@ -227,7 +234,7 @@ export default function App() {
         {currentView === 'events' && (
            <EventsManager />
         )}
-        </div>
+        </main>
       </div>
 
       {/* Toast Notifications */}

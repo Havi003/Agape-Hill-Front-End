@@ -74,37 +74,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   const stats = [
     { title: 'Total Students', value: statsData?.totalStudents || 0, icon: Users, color: 'bg-blue-500', description: 'Registered in the system' },
-    { title: 'Male Students', value: statsData?.maleStudents || 0, icon: Users, color: 'bg-green-500', description: `${statsData?.malePercentage.toFixed(1)}% of total` },
-    { title: 'Female Students', value: statsData?.femaleStudents || 0, icon: Users, color: 'bg-purple-500', description: `${statsData?.femalePercentage.toFixed(1)}% of total` },
+    { title: 'Male Students', value: statsData?.maleStudents || 0, icon: Users, color: 'bg-green-500', description: `${statsData?.malePercentage?.toFixed(1) ?? '0.0'}% of total` },
+    { title: 'Female Students', value: statsData?.femaleStudents || 0, icon: Users, color: 'bg-purple-500', description: `${statsData?.femalePercentage?.toFixed(1) ?? '0.0'}% of total` },
     { title: 'This Month', value: statsData?.registrationsThisMonth || 0, icon: TrendingUp, color: 'bg-orange-500', description: 'New registrations' }
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 p-4">
+    <div className="mx-auto max-w-7xl space-y-5 sm:space-y-8 sm:p-2 lg:p-4">
       {/* Welcome Banner */}
-      <Card className="p-8 bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-xl relative overflow-hidden">
+      <Card className="relative overflow-hidden bg-gradient-to-r from-blue-900 to-blue-700 p-5 text-white shadow-xl sm:p-8">
         <div className="flex items-center gap-4 relative z-10">
-          <div className="size-16 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white/20 p-0.5">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-white p-0.5 sm:size-16">
             <ImageWithFallback src={schoolLogo} alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold mb-1">Welcome to Agape Hill </h1>
-            <p className="text-blue-100">Management System Dashboard</p>
+            <h1 className="mb-1 text-xl font-bold leading-tight sm:text-2xl">Welcome to Agape Hill</h1>
+            <p className="text-sm text-blue-100 sm:text-base">Management System Dashboard</p>
           </div>
         </div>
       </Card>
 
       {/* Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={index} className="p-6 hover:shadow-md transition-shadow">
+            <Card key={index} className="p-4 transition-shadow hover:shadow-md sm:p-6">
               <div className={`size-12 ${stat.color} rounded-lg flex items-center justify-center mb-4`}>
                 <Icon className="size-6 text-white" />
               </div>
-              <h3 className="text-3xl font-bold mb-1">{stat.value}</h3>
-              <p className="font-semibold text-gray-700 mb-1">{stat.title}</p>
+              <h3 className="mb-1 text-2xl font-bold sm:text-3xl">{stat.value}</h3>
+              <p className="mb-1 text-sm font-semibold text-gray-700 sm:text-base">{stat.title}</p>
               <p className="text-sm text-gray-500">{stat.description}</p>
             </Card>
           );
@@ -115,7 +115,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* DYNAMICALLY FIXED: Recent Registrations Section */}
-        <Card className="lg:col-span-2 p-6 flex flex-col justify-between min-h-[300px]">
+        <Card className="flex min-h-[300px] flex-col justify-between p-4 sm:p-6 lg:col-span-2">
           <div>
             <h2 className="text-xl font-bold mb-4 text-slate-900">Recent Registrations</h2>
             
@@ -127,17 +127,17 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             ) : (
               <div className="divide-y divide-gray-100">
                 {recentStudents.map((student) => (
-                  <div key={student.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+                  <div key={student.id} className="flex items-start justify-between gap-3 py-4 first:pt-0 last:pb-0 sm:items-center">
                     <div className="flex items-center gap-3">
                       <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center font-bold text-blue-900">
                         {student.fullName.charAt(0)}
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{student.fullName}</p>
-                        <p className="text-sm text-gray-500">{student.admissionNumber} • {student.studentGender}</p>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-gray-900">{student.fullName}</p>
+                        <p className="break-all text-xs text-gray-500 sm:text-sm">{student.admissionNumber} • {student.studentGender}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+                    <div className="flex shrink-0 items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-xs text-gray-400 sm:px-3 sm:text-sm">
                       <Calendar className="size-3.5" />
                       <span>
                         {student.registeredDate && new Date(student.registeredDate).toLocaleDateString('en-US', {
@@ -163,7 +163,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </Card>
 
         {/* Quick Actions Section */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
           <div className="space-y-4">
             <button

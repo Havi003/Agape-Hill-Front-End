@@ -100,25 +100,28 @@ export function EventsManager() {
     }
   };
 
+  const visibleParticipants = (selectedEvent?.participants || [])
+    .filter(participant => participant.fullName.toLowerCase().includes(rosterSearch.toLowerCase()));
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6">
       
       {/* VIEW 1: EVENTS LIST */}
       {view === 'list' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="size-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Calendar className="size-7 text-blue-900" />
+            <div className="flex items-start gap-3 sm:items-center">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 sm:size-12">
+                <Calendar className="size-6 text-blue-900 sm:size-7" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">School Events & Activities</h1>
+                <h1 className="text-xl font-bold leading-tight text-gray-900 sm:text-2xl">School Events & Activities</h1>
                 <p className="text-gray-500 text-sm">Create activities, map dates, and manage event financial entries.</p>
               </div>
             </div>
             <Button 
               onClick={() => setView('create')}
-              className="bg-blue-900 hover:bg-blue-800 text-white flex items-center gap-2"
+              className="flex w-full items-center gap-2 bg-blue-900 text-white hover:bg-blue-800 sm:w-auto"
             >
               <Plus className="size-4" /> Log New Event
             </Button>
@@ -130,7 +133,7 @@ export function EventsManager() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (
                 <div key={event.id} className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between overflow-hidden">
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="bg-blue-50 text-blue-900 font-bold px-3 py-1 rounded text-xs inline-block mb-3">
                       Ksh. {Number(event.registrationFee || 0).toLocaleString()} / Student
                     </div>
@@ -146,12 +149,12 @@ export function EventsManager() {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-4 text-gray-600">
+                  <div className="flex flex-col items-start justify-between gap-3 border-t border-gray-100 bg-gray-50 px-4 py-4 text-sm sm:flex-row sm:items-center sm:px-6">
+                    <div className="flex flex-wrap items-center gap-4 text-gray-600">
                       <span className="flex items-center gap-1"><Users className="size-4" /> {event.participantCount || 0}</span>
                       <span className="flex items-center gap-1 text-green-700 font-semibold">Ksh. {Number(event.totalCollected || 0).toLocaleString()}</span>
                     </div>
-                    <button onClick={() => handleOpenLedger(event)} className="text-blue-900 hover:text-blue-700 font-semibold">
+                    <button onClick={() => handleOpenLedger(event)} className="font-semibold text-blue-900 hover:text-blue-700">
                       Manage Roster →
                     </button>
                   </div>
@@ -169,14 +172,14 @@ export function EventsManager() {
             <ArrowLeft className="size-4" /> Back to all events
           </button>
 
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex flex-col items-start justify-between gap-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 md:flex-row md:items-center md:gap-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{selectedEvent.title}</h2>
+              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{selectedEvent.title}</h2>
               <p className="text-gray-500 mt-1">Event Cost: Ksh. {Number(selectedEvent.registrationFee || 0).toLocaleString()} per participant</p>
             </div>
             <Button 
               onClick={() => setIsLoggingPayment(!isLoggingPayment)}
-              className="bg-green-700 hover:bg-green-600 text-white flex items-center gap-2"
+              className="flex w-full items-center gap-2 bg-green-700 text-white hover:bg-green-600 sm:w-auto"
             >
               <DollarSign className="size-4" /> Record Student Payment
             </Button>
@@ -184,7 +187,7 @@ export function EventsManager() {
 
           {/* Inline Payment Entry Section Using Active Live Students List */}
           {isLoggingPayment && (
-            <div className="bg-gray-50 p-6 rounded-xl border-2 border-dashed border-gray-300 max-w-xl">
+            <div className="max-w-xl rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 sm:p-6">
               <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <UserCheck className="size-5 text-blue-900" /> Log Transaction Statement
               </h3>
@@ -220,7 +223,7 @@ export function EventsManager() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
                   <button type="button" onClick={() => setIsLoggingPayment(false)} className="text-xs font-semibold px-3 py-1.5 hover:bg-gray-200 rounded text-gray-600">Dismiss</button>
                   <button type="submit" className="text-xs font-semibold px-4 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded shadow-sm">Confirm Transaction</button>
                 </div>
@@ -230,7 +233,7 @@ export function EventsManager() {
 
           {/* Ledger Table Panel */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col items-start justify-between gap-4 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:p-6">
               <h3 className="font-bold text-gray-900 text-lg">Payments Ledger</h3>
               <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
@@ -244,7 +247,33 @@ export function EventsManager() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="space-y-3 p-4 md:hidden">
+              {visibleParticipants.map((participant) => {
+                const isFullyPaid = participant.amountPaid >= selectedEvent.registrationFee;
+                const isNotPaid = participant.amountPaid === 0;
+                return (
+                  <article key={participant.studentId} className="rounded-xl border border-gray-200 p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="truncate font-bold text-gray-900">{participant.fullName}</h4>
+                        <p className="mt-1 break-all font-mono text-xs text-gray-500">{participant.admissionNumber}</p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        isFullyPaid ? 'bg-green-50 text-green-700' : isNotPaid ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                      }`}>
+                        {isFullyPaid ? 'Paid' : isNotPaid ? 'Not paid' : 'Partial'}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3 text-sm">
+                      <span className="text-gray-500">Total transacted</span>
+                      <strong className="text-gray-900">Ksh. {Number(participant.amountPaid).toLocaleString()}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-700">
                   <tr>
@@ -255,9 +284,7 @@ export function EventsManager() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 text-sm">
-                  {(selectedEvent.participants || [])
-                    .filter(p => p.fullName.toLowerCase().includes(rosterSearch.toLowerCase()))
-                    .map((participant) => {
+                  {visibleParticipants.map((participant) => {
                       const isFullyPaid = participant.amountPaid >= selectedEvent.registrationFee;
                       const isNotPaid = participant.amountPaid === 0;
 
@@ -295,7 +322,7 @@ export function EventsManager() {
 
       {/* VIEW 3: CREATE EVENT FORM */}
       {view === 'create' && (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl border border-gray-200 shadow-sm space-y-6">
+        <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-8">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Log an Upcoming School Event</h2>
             <p className="text-sm text-gray-500 mt-1">Configure parameters to generate an activity panel module.</p>
@@ -319,9 +346,9 @@ export function EventsManager() {
               <label className="text-sm font-semibold text-gray-700">Registration Fee Requirement (Ksh.)</label>
               <input type="number" required placeholder="0.00" value={newFee} onChange={(e) => setNewFee(e.target.value)} className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none" />
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <Button type="button" variant="outline" onClick={() => setView('list')}>Cancel</Button>
-              <Button type="submit" className="bg-blue-900 text-white">Save Event Structure</Button>
+            <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setView('list')} className="w-full sm:w-auto">Cancel</Button>
+              <Button type="submit" className="w-full bg-blue-900 text-white sm:w-auto">Save Event Structure</Button>
             </div>
           </form>
         </div>

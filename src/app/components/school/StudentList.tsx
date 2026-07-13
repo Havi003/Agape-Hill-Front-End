@@ -68,22 +68,22 @@ export function StudentList({ onViewStudent, filterClass }: StudentListProps) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <Card className="p-8 shadow-lg">
+      <Card className="p-4 shadow-sm sm:p-6 lg:p-8 lg:shadow-lg">
         {/* Header Block Section */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
+        <div className="mb-5 flex flex-col items-start justify-between gap-4 border-b border-gray-200 pb-5 sm:mb-6 sm:flex-row sm:items-center sm:pb-6">
           <div className="flex items-center gap-3">
-            <div className="size-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="size-7 text-blue-900" />
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 sm:size-12">
+              <Users className="size-6 text-blue-900 sm:size-7" />
             </div>
             <div>
-              <h2 className="text-xl font-bold mb-1">
+              <h2 className="mb-0.5 text-lg font-bold sm:mb-1 sm:text-xl">
                 {filterClass === 'all' ? 'All Records' : `${filterClass} Directory`}
               </h2>
               <p className="text-gray-500 text-sm">Enrolled: {targetStudents.length} students</p>
             </div>
           </div>
           
-          <div className="relative w-full sm:w-96">
+          <div className="relative w-full sm:w-80 lg:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
             <Input
               placeholder={`Search within ${filterClass}...`}
@@ -101,12 +101,52 @@ export function StudentList({ onViewStudent, filterClass }: StudentListProps) {
         )}
 
         {targetStudents.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
+          <div className="px-4 py-12 text-center text-gray-500 sm:p-12">
             No student records found under this class tier.
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="overflow-x-auto">
+            {/* Mobile directory cards keep every record readable without horizontal scrolling. */}
+            <div className="space-y-3 md:hidden">
+              {paginatedStudents.map((student) => (
+                <article key={student.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-900">
+                      {student.fullName?.charAt(0) || 'S'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-bold text-gray-900">{student.fullName}</h3>
+                      <p className="mt-0.5 break-all font-mono text-xs font-semibold text-blue-900">
+                        {student.admissionNumber}
+                      </p>
+                    </div>
+                  </div>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3 text-sm">
+                    <div>
+                      <dt className="text-xs text-gray-500">Gender</dt>
+                      <dd className="mt-0.5 font-semibold text-gray-800">{student.studentGender || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-gray-500">Fee balance</dt>
+                      <dd className={`mt-0.5 font-bold ${student.feeStatus && student.feeStatus.balance > 0 ? 'text-red-600' : 'text-green-700'}`}>
+                        Ksh. {student.feeStatus?.balance?.toLocaleString() || '0.00'}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => onViewStudent(student)}
+                    className="mt-4 w-full border-blue-200 text-blue-900 hover:bg-blue-50"
+                  >
+                    <Eye className="mr-2 size-4" /> View profile
+                  </Button>
+                </article>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full">
                 <thead className="bg-blue-50 border-b-2 border-blue-900">
                   <tr>
@@ -142,7 +182,7 @@ export function StudentList({ onViewStudent, filterClass }: StudentListProps) {
             </div>
 
             {/* 4. PACING INTERACTIVE CONTROLS BAR */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100 text-sm text-gray-600">
+            <div className="flex flex-col items-center justify-between gap-4 border-t border-gray-100 pt-4 text-center text-sm text-gray-600 sm:flex-row sm:text-left">
               <div>
                 Showing <span className="font-semibold">{startIndex + 1}</span> to{' '}
                 <span className="font-semibold">
@@ -151,18 +191,18 @@ export function StudentList({ onViewStudent, filterClass }: StudentListProps) {
                 of <span className="font-semibold">{targetStudents.length}</span> students
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="h-9 px-3 disabled:opacity-40"
+                  className="h-9 px-2.5 disabled:opacity-40 sm:px-3"
                 >
-                  <ChevronLeft className="size-4 mr-1" /> Prev
+                  <ChevronLeft className="size-4 sm:mr-1" /> <span className="hidden sm:inline">Prev</span>
                 </Button>
 
-                <div className="flex items-center gap-1 font-medium text-gray-900 px-2">
+                <div className="flex items-center gap-1 px-2 font-medium text-gray-900">
                   Page <span>{currentPage}</span> of <span>{totalPages}</span>
                 </div>
 
@@ -171,9 +211,9 @@ export function StudentList({ onViewStudent, filterClass }: StudentListProps) {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="h-9 px-3 disabled:opacity-40"
+                  className="h-9 px-2.5 disabled:opacity-40 sm:px-3"
                 >
-                  Next <ChevronRight className="size-4 ml-1" />
+                  <span className="hidden sm:inline">Next</span> <ChevronRight className="size-4 sm:ml-1" />
                 </Button>
               </div>
             </div>

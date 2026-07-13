@@ -126,19 +126,19 @@ export function NextOfKinDialog({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
 
-      <Card className="w-full max-w-2xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <Card className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto p-4 shadow-2xl sm:p-8">
 
         {/* HEADER */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <div className="mb-6 flex items-start justify-between gap-3 border-b border-gray-200 pb-4 sm:items-center">
 
           <div className="flex items-center gap-3">
-            <div className="size-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:flex">
               <Users className="size-6 text-blue-900" />
             </div>
 
             <div>
               <h2>Edit Next of Kin</h2>
-              <p className="text-gray-600">
+              <p className="break-all text-sm text-gray-600 sm:text-base">
                 {student.fullName} - {student.admissionNumber}
               </p>
             </div>
@@ -159,7 +159,7 @@ export function NextOfKinDialog({
         {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
 
             <div>
               <Label>Name *</Label>
@@ -220,13 +220,13 @@ export function NextOfKinDialog({
           </div>
 
           {/* ACTIONS */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
 
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
               Cancel
             </Button>
 
-            <Button type="submit" className="bg-blue-900 hover:bg-blue-800">
+            <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 sm:w-auto">
               <Save className="size-4 mr-2" />
               Save Changes
             </Button>

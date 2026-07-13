@@ -46,7 +46,7 @@ export function FeeManagementDialog({ student, onClose, onUpdateFees }: FeeManag
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <Card className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto p-4 shadow-2xl sm:p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
           <div>
@@ -61,7 +61,7 @@ export function FeeManagementDialog({ student, onClose, onUpdateFees }: FeeManag
         {/* Current Fee Status */}
         <div className="bg-blue-50 p-4 rounded-lg mb-6">
           <h3 className="text-blue-900 mb-3">Current Fee Status</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <div>
               <p className="text-sm text-gray-600">Total Billed</p>
               <p className="font-bold text-blue-900">
@@ -86,7 +86,7 @@ export function FeeManagementDialog({ student, onClose, onUpdateFees }: FeeManag
         {/* Add New Bill */}
         <div className="mb-6">
           <h3 className="mb-3">Add New Bill</h3>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
               <Label htmlFor="billedAmount">Amount (Ksh)</Label>
               <Input
@@ -100,11 +100,11 @@ export function FeeManagementDialog({ student, onClose, onUpdateFees }: FeeManag
                 step="0.01"
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end sm:w-auto">
               <Button 
                 onClick={handleAddBill}
                 disabled={!billedAmount || parseFloat(billedAmount) <= 0}
-                className="bg-blue-900 hover:bg-blue-800"
+                className="w-full bg-blue-900 hover:bg-blue-800 sm:w-auto"
               >
                 <Plus className="size-4 mr-2" />
                 Add Bill
@@ -116,7 +116,7 @@ export function FeeManagementDialog({ student, onClose, onUpdateFees }: FeeManag
         {/* Record Payment */}
         <div className="mb-6">
           <h3 className="mb-3">Record Payment</h3>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1">
               <Label htmlFor="paidAmount">Amount (Ksh)</Label>
               <Input
@@ -134,7 +134,7 @@ export function FeeManagementDialog({ student, onClose, onUpdateFees }: FeeManag
               <Button 
                 onClick={handleAddPayment}
                 disabled={!paidAmount || parseFloat(paidAmount) <= 0}
-                className="bg-green-600 hover:bg-green-700"
+                className="w-full bg-green-600 hover:bg-green-700 sm:w-auto"
               >
                 <DollarSign className="size-4 mr-2" />
                 Add Payment

@@ -27,13 +27,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 shadow-2xl">
+      <Card className="w-full max-w-md p-5 shadow-2xl sm:p-8">
         {/* Logo and Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center size-20 bg-blue-900 rounded-full mb-4">
-            <GraduationCap className="size-12 text-white" />
+          <div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-900 sm:size-20">
+            <GraduationCap className="size-10 text-white sm:size-12" />
           </div>
-          <h1 className="text-3xl mb-2 text-blue-900">
+          <h1 className="mb-2 text-2xl text-blue-900 sm:text-3xl">
             Agape Hill 
           </h1>
           <p className="text-gray-600">Management System</p>

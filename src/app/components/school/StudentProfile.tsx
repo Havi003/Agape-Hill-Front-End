@@ -124,21 +124,21 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
     <>
       <div className="max-w-4xl mx-auto opacity-100 transition-opacity relative">
         {(isSubmitting || isLoadingKin) && <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center">Loading...</div>}
-        <Card className="p-8 shadow-lg relative overflow-hidden">
+        <Card className="relative overflow-hidden p-4 shadow-sm sm:p-6 lg:p-8 lg:shadow-lg">
           {/* Watermark Logo */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
             <GraduationCap className="size-96" />
           </div>
 
           {/* Header */}
-          <div className="relative z-10 flex items-start justify-between mb-8 pb-6 border-b-2 border-blue-900">
-            <div className="flex items-center gap-4">
-              <div className="size-20 bg-blue-900 rounded-full flex items-center justify-center">
-                <User className="size-12 text-white" />
+          <div className="relative z-10 mb-6 flex items-start justify-between gap-3 border-b-2 border-blue-900 pb-5 sm:mb-8 sm:pb-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-blue-900 sm:size-20">
+                <User className="size-8 text-white sm:size-12" />
               </div>
-              <div>
-                <h2 className="mb-1 text-2xl font-bold text-slate-900">{student.fullName}</h2>
-                <p className="text-lg text-gray-600">Admission No: {student.admissionNumber}</p>
+              <div className="min-w-0">
+                <h2 className="mb-1 truncate text-xl font-bold text-slate-900 sm:text-2xl">{student.fullName}</h2>
+                <p className="break-all text-sm text-gray-600 sm:text-lg">Admission No: {student.admissionNumber}</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -250,7 +250,7 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
                   Edit
                 </Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-sm text-gray-600">Name</p>
                   <p className="font-semibold">{nextOfKin.name || 'Not provided'}</p>
@@ -261,7 +261,7 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="size-4 text-gray-500" />
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm text-gray-600">Phone Number</p>
                     <p className="font-semibold">{nextOfKin.phoneNumber || 'Not provided'}</p>
                   </div>
@@ -271,7 +271,7 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
                   <div>
                     <p className="text-sm text-gray-600">Email</p>
                     {/* Fixed mapping here */}
-                    <p className="font-semibold">{nextOfKin.email || 'Not provided'}</p>
+                    <p className="break-all font-semibold">{nextOfKin.email || 'Not provided'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:col-span-2">
@@ -292,11 +292,12 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
           </div>
 
           {/* Quick Actions Panel */}
-          <div className="relative z-10 flex gap-3 border-t pt-4">
+          <div className="relative z-10 flex flex-col gap-3 border-t pt-4 sm:flex-row">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFeeManagement(true)}
+              className="w-full sm:w-auto"
             >
               <DollarSign className="size-4 mr-2" />
               Manage Fees
@@ -305,6 +306,7 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
               variant="outline"
               size="sm"
               onClick={() => setShowNextOfKinEdit(true)}
+              className="w-full sm:w-auto"
             >
               <Edit className="size-4 mr-2" />
               Edit Next of Kin

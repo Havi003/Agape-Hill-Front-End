@@ -252,11 +252,11 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Sub-navigation Switch Tab Toggles */}
-      <div className="flex space-x-2 mb-4 bg-gray-100 p-1.5 rounded-lg w-max">
+      <div className="mb-4 grid w-full grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1.5 sm:flex sm:w-max sm:space-x-2">
         <Button 
           type="button" 
           variant={activeMode === 'single' ? 'default' : 'ghost'}
-          className={activeMode === 'single' ? 'bg-blue-900 shadow-sm text-white hover:bg-blue-800' : 'text-gray-600'}
+          className={`${activeMode === 'single' ? 'bg-blue-900 shadow-sm text-white hover:bg-blue-800' : 'text-gray-600'} h-auto px-2 py-2 text-xs sm:px-4 sm:text-sm`}
           onClick={() => setActiveMode('single')}
         >
           Single Enrollment
@@ -264,36 +264,36 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
         <Button 
           type="button" 
           variant={activeMode === 'bulk' ? 'default' : 'ghost'}
-          className={activeMode === 'bulk' ? 'bg-blue-900 shadow-sm text-white hover:bg-blue-800' : 'text-gray-600'}
+          className={`${activeMode === 'bulk' ? 'bg-blue-900 shadow-sm text-white hover:bg-blue-800' : 'text-gray-600'} h-auto px-2 py-2 text-xs sm:px-4 sm:text-sm`}
           onClick={() => setActiveMode('bulk')}
         >
           Bulk Import (Excel)
         </Button>
       </div>
 
-      <Card className="p-8 shadow-lg transition-all duration-300">
+      <Card className="p-4 shadow-sm transition-all duration-300 sm:p-6 lg:p-8 lg:shadow-lg">
         {/* Dynamic Card Headings Header */}
-        <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200">
+        <div className="mb-6 flex items-center justify-between gap-3 border-b border-gray-200 pb-5 sm:mb-8 sm:pb-6">
           <div>
-            <h2 className="text-2xl font-bold text-blue-900 mb-1">
+            <h2 className="mb-1 text-xl font-bold text-blue-900 sm:text-2xl">
               {activeMode === 'single' ? 'Student Registration' : 'Excel Batch Enrollment'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-sm text-gray-600 sm:text-base">
               {activeMode === 'single' ? 'Enter details to enroll a new student at Agape Hill' : 'Drop your school registration spreadsheets below'}
             </p>
           </div>
-          <div className="size-16 bg-blue-100 rounded-full flex items-center justify-center">
+          <div className="hidden size-16 shrink-0 items-center justify-center rounded-full bg-blue-100 sm:flex">
             {activeMode === 'single' ? <GraduationCap className="size-9 text-blue-900" /> : <FileSpreadsheet className="size-9 text-blue-900" />}
           </div>
         </div>
 
         {/* MODE A: SINGLE ENROLLMENT FORM */}
         {activeMode === 'single' && (
-          <form onSubmit={handleSingleSubmit} className="space-y-8">
+          <form onSubmit={handleSingleSubmit} className="space-y-6 sm:space-y-8">
             {/* Bio Data */}
             <div>
               <h3 className="mb-4 pb-2 border-b border-gray-200 font-bold text-gray-700">Bio Data</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name *</Label>
                   <Input
@@ -335,7 +335,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
             {/* Tracking & Class System */}
             <div>
               <h3 className="mb-4 pb-2 border-b border-gray-200 font-bold text-gray-700">System & Government Tracking</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="nemis">NEMIS Number *</Label>
                   <Input
@@ -368,7 +368,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
             {/* Next of Kin Details */}
             <div>
               <h3 className="mb-4 pb-2 border-b border-gray-200 font-bold text-gray-700">Next of Kin Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                 <div className="space-y-2">
                   <Label>Guardian Name *</Label>
                   <Input
@@ -419,12 +419,12 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
             </div>
 
             {/* Single Registration Form Action Elements */}
-            <div className="flex gap-4 pt-6 border-t border-gray-200">
-              <Button type="submit" className="bg-blue-900 hover:bg-blue-800 min-w-[160px]" disabled={isSubmitting || isSuccess}>
+            <div className="flex flex-col gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:gap-4">
+              <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 sm:w-auto sm:min-w-[160px]" disabled={isSubmitting || isSuccess}>
                 {isSubmitting ? <Loader2 className="size-4 mr-2 animate-spin" /> : isSuccess ? <CheckCircle2 className="size-4 mr-2" /> : <Save className="size-4 mr-2" />}
                 {isSuccess ? 'Registered!' : 'Register Student'}
               </Button>
-              <Button type="button" variant="outline" onClick={handleReset}>
+              <Button type="button" variant="outline" onClick={handleReset} className="w-full sm:w-auto">
                 <X className="size-4 mr-2" /> Clear Form
               </Button>
             </div>
@@ -448,7 +448,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
               onDragLeave={handleDrag}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${
+              className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-all sm:p-12 ${
                 dragActive ? 'border-blue-600 bg-blue-50/50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50/50'
               }`}
             >
@@ -479,7 +479,7 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
             {/* Data Staging List Preview */}
             {excelStudents.length > 0 && (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4 animate-fadeIn">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex flex-col items-start justify-between gap-2 border-b border-gray-200 pb-3 sm:flex-row sm:items-center">
                   <div className="flex items-center space-x-2">
                     <UserCheck className="size-5 text-emerald-600" />
                     <span className="font-bold text-gray-700">Spreadsheet Staging Area</span>
@@ -507,11 +507,11 @@ export function StudentRegistration({ onSuccess }: StudentRegistrationProps) {
                 </div>
 
                 {/* Staging Execution Submission buttons */}
-                <div className="flex space-x-3 pt-2">
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:space-x-3">
                   <Button 
                     onClick={handleBulkSubmit}
                     disabled={isSubmitting || isSuccess}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6"
+                    className="w-full bg-emerald-600 px-6 font-medium text-white hover:bg-emerald-700 sm:w-auto"
                   >
                     {isSubmitting ? (
                       <Loader2 className="size-4 mr-2 animate-spin" />

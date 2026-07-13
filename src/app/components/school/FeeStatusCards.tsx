@@ -21,7 +21,7 @@ export function FeeStatusCards({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Total Billed */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-lg">
+      <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 p-4 shadow-lg sm:p-6">
         <div className="flex items-start gap-4">
           <div className="size-12 bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
             <FileText className="size-6 text-white" />
@@ -43,7 +43,7 @@ export function FeeStatusCards({
       </div>
 
       {/* Total Paid */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-lg">
+      <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 p-4 shadow-lg sm:p-6">
         <div className="flex items-start gap-4">
           <div className="size-12 bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
             <CreditCard className="size-6 text-white" />
@@ -65,7 +65,7 @@ export function FeeStatusCards({
       </div>
 
       {/* Balance */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 shadow-lg">
+      <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 p-4 shadow-lg sm:p-6">
         <div className="flex items-start gap-4">
           <div className="size-12 bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
             <Wallet className="size-6 text-white" />
