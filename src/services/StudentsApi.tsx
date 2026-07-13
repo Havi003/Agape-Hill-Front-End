@@ -26,8 +26,6 @@ export interface Student {
   kinContact?: string;
 }
 
-
-
 // ✅ FIXED: Safely structured to avoid adding unintended trailing slashes
 export const getStudents = async (search: string = ""): Promise<Student[]> => {
   const res = await api.get('', {
@@ -41,8 +39,15 @@ export const getDashboardStats = async () => {
   return res.data.body;
 };
 
+// 🛠️ ALIGNED: Pointed to '/create' to match your Spring Controller mapping (@PostMapping("/create"))
 export const registerStudent = async (data: any) => {
-  const res = await api.post('', data);
+  const res = await api.post('/create', data);
+  return res.data.body;
+};
+
+// ✅ NEW: Bulk creation endpoint mapping directly to your backend array processor
+export const registerStudentsInBulk = async (data: any[]) => {
+  const res = await api.post('/bulk-create', data);
   return res.data.body;
 };
 

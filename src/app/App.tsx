@@ -90,7 +90,7 @@ export default function App() {
     saveStudents(updatedStudents);
     
     toast.success(
-      `Student ${newStudent.fullName} successfully added to Agape Hill`,
+      `Student ${newStudent.fullName} successfully added to Agape Hill `,
       {
         description: `Admission Number: ${newStudent.admissionNumber}`
       }

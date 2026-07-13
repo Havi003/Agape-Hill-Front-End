@@ -1,6 +1,6 @@
 // src/api/feeApi.ts
 import axios from 'axios';
-import { MasterFeeStructure, FeeStatement, GradeLevel } from '../types/FeeTypes';
+import { MasterFeeStructure, FeeStatement, GradeLevel } from '../types/feeTypes';
 
 const api = axios.create({
   baseURL: 'http://localhost:8080/api/fees',

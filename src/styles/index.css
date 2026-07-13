@@ -1,3 +1,32 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+@media print {
+  /* Hide interactive layouts like sidebar panels, button rows, and navigation fields */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Selectively make ONLY the target invoice container visible */
+  #printable-fee-statement,
+  #printable-fee-statement * {
+    visibility: visible;
+  }
+  
+  /* Place the invoice block precisely at the top-left margin anchor point */
+  #printable-fee-statement {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000000 !important;
+    background: transparent !important;
+  }
+
+  /* Force background imagery and colors to render accurately on paper printouts */
+  .print-force {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
