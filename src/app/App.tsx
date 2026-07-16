@@ -8,6 +8,7 @@ import { StudentRegistration, Student } from './components/school/StudentRegistr
 import { StudentList } from './components/school/StudentList';
 import { StudentProfile } from './components/school/StudentProfile';
 import { EventsManager } from './components/school/EventsManager';
+import { FeesManager, type FeeView } from './components/school/FeesManager';
 
 export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -172,6 +173,14 @@ export default function App() {
     localStorage.setItem('ahps_current_view', 'profile');
   };
 
+  const handleManageStudentFees = (student: Student) => {
+    setSelectedStudent(student);
+    localStorage.setItem('ahps_selected_student', JSON.stringify(student));
+    setCurrentView('fees-payments');
+    localStorage.setItem('ahps_current_view', 'fees-payments');
+    setIsMobileMenuOpen(false);
+  };
+
   // If not authenticated, show login screen
   if (!isAuthenticated) {
     return (
@@ -226,13 +235,25 @@ export default function App() {
             <StudentProfile
               student={selectedStudent}
               onClose={handleCloseProfile}
-              onUpdateFees={handleUpdateFees}
-              onUpdateNextOfKin={handleUpdateNextOfKin}
+              onManageFees={handleManageStudentFees}
             />
           )}
 
         {currentView === 'events' && (
            <EventsManager />
+        )}
+        {currentView.startsWith('fees-') && (
+          <FeesManager
+            view={currentView as FeeView}
+            initialStudent={selectedStudent ? {
+              id: selectedStudent.id,
+              admissionNumber: selectedStudent.admissionNumber,
+              fullName: selectedStudent.fullName,
+              studentClass: selectedStudent.studentClass,
+              studentGender: selectedStudent.studentGender,
+              nemisNumber: selectedStudent.nemisNumber
+            } : undefined}
+          />
         )}
         </main>
       </div>

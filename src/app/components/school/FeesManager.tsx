@@ -1,51 +1,161 @@
-// src/components/school/FeesManager.tsx
-import { useState } from 'react';
-import { Wallet, Settings, Users, RefreshCw, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, CalendarRange, CircleDollarSign, FileText, Landmark, Loader2, Plus, ReceiptText, RefreshCw, Save, Settings2, Trash2, Users } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
-import { FeeStructureForm } from './FeeStructureForm';
-import { StudentFeeLedger } from './StudentFeeLedger';
+import { Card } from '../ui/card';
+import { Input } from '../ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { getStudents, type Student } from '../../../services/StudentsApi';
+import * as fees from '../../../services/FeeApi';
+import { FeeTemplateEditor } from './FeeTemplateEditor';
 
-export function FeesManager() {
-  const [activeTab, setActiveTab] = useState<'ledger' | 'configure'>('ledger');
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 p-4">
-      
-      {/* Header Controls Block */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 pb-5">
-        <div className="flex items-center gap-3">
-          <div className="size-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-            <Wallet className="size-7 text-emerald-900" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Financial Fee Management</h1>
-            <p className="text-gray-500 text-sm">Configure billing structures, execute term rollovers, and issue statements.</p>
-          </div>
-        </div>
-
-        {/* Tab View Switcher Controls */}
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-xl border border-gray-200">
-          <button
-            onClick={() => setActiveTab('ledger')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'ledger' ? 'bg-white text-blue-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Users className="size-4" /> Manage Student Fees
-          </button>
-          <button
-            onClick={() => setActiveTab('configure')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'configure' ? 'bg-white text-blue-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Settings className="size-4" /> Configure Structure
-          </button>
-        </div>
-      </div>
-
-      {/* Render Selected Module Content */}
-      {activeTab === 'ledger' ? <StudentFeeLedger /> : <FeeStructureForm />}
-    </div>
-  );
+export type FeeView = 'fees-dashboard' | 'fees-years' | 'fees-terms' | 'fees-structures' | 'fees-options' | 'fees-billing' | 'fees-statements' | 'fees-payments';
+const meta: Record<FeeView, [string, string, typeof CircleDollarSign]> = {
+  'fees-dashboard': ['Fee Dashboard', 'Configuration and billing readiness.', CircleDollarSign],
+  'fees-years': ['Academic Calendar', 'Manage the complete academic calendar.', CalendarRange],
+  'fees-terms': ['Academic Calendar', 'Manage the complete academic calendar.', CalendarRange],
+  'fees-structures': ['Fee Structures', 'Build, publish and maintain class-group fee schedules.', Settings2],
+  'fees-options': ['Optional Fees', 'Assign optional services and custom amounts.', Users],
+  'fees-billing': ['Generate Bills', 'Preview, generate and recalculate term bills.', ReceiptText],
+  'fees-statements': ['Student Statements', 'Review calculated charges, payments and balances.', FileText],
+  'fees-payments': ['Record Payment', 'Capture cash, bank and manual payments.', Landmark]
+};
+const money = (n = 0) => `Ksh. ${Number(n).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
+const errorMessage = (e: any) => e?.response?.data?.header?.message || e?.response?.data?.message || e?.message || 'Request failed';
+const Field = (p: React.InputHTMLAttributes<HTMLInputElement>) => <Input {...p} />;
+function Select({ value, onChange, children, required = false }: { value: string; onChange: (v: string) => void; children: React.ReactNode; required?: boolean }) { return <select required={required} value={value} onChange={e => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm">{children}</select>; }
+function Loading() { return <Card className="flex min-h-56 items-center justify-center"><Loader2 className="size-7 animate-spin text-blue-900" /></Card>; }
+function Empty({ children }: { children: React.ReactNode }) { return <div className="rounded-xl border border-dashed border-slate-300 px-5 py-12 text-center text-sm text-slate-500">{children}</div>; }
+function Panel({ children }: { children: React.ReactNode }) { return <Card className="space-y-4 p-4 sm:p-5">{children}</Card>; }
+function RiskConfirmation({ open, title, description, onContinue, onCancel }: { open: boolean; title: string; description: string; onContinue: () => void | Promise<void>; onCancel: () => void }) {
+  return <AlertDialog open={open} onOpenChange={value => { if (!value) onCancel(); }}><AlertDialogContent><AlertDialogHeader><div className="mb-2 flex size-12 items-center justify-center rounded-full bg-red-100"><AlertTriangle className="size-6 text-red-600" /></div><AlertDialogTitle>{title}</AlertDialogTitle><AlertDialogDescription>{description}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={onCancel} className="border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white">Cancel action</AlertDialogCancel><AlertDialogAction onClick={onContinue} className="bg-red-600 text-white hover:bg-red-700">Continue anyway</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>;
 }
+
+export function FeesManager({ view, initialStudent }: { view: FeeView; initialStudent?: Student }) {
+  const [title, description, Icon] = meta[view];
+  return <div className="mx-auto max-w-7xl space-y-5"><div className="flex items-start gap-3"><div className="rounded-xl bg-blue-100 p-3"><Icon className="size-6 text-blue-900" /></div><div><h1 className="text-2xl font-bold text-slate-950">{title}</h1><p className="mt-1 text-sm text-slate-500">{description}</p></div></div>
+    {view === 'fees-dashboard' && <FeeDashboard />}{(view === 'fees-years' || view === 'fees-terms') && <AcademicCalendar />}{view === 'fees-structures' && <FeeTemplateEditor />}{view === 'fees-options' && <Options />}{view === 'fees-billing' && <Billing />}{view === 'fees-statements' && <Statements />}{view === 'fees-payments' && <Payments initialStudent={initialStudent} />}
+  </div>;
+}
+
+function FeeDashboard() {
+  const [years, setYears] = useState<fees.AcademicYear[]>([]);
+  const [terms, setTerms] = useState<fees.AcademicTerm[]>([]);
+  const [year, setYear] = useState('');
+  const [term, setTerm] = useState('');
+  const [dashboard, setDashboard] = useState<fees.BillingDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboard = async (yearId = year, termId = term) => {
+    setLoading(true);
+    try { setDashboard(await fees.getBillingDashboard(yearId || undefined, termId || undefined)); }
+    catch (e) { toast.error(errorMessage(e)); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    Promise.all([fees.getAcademicYears(), fees.getTerms(), fees.getBillingDashboard()])
+      .then(([yearRows, termRows, totals]) => { setYears(yearRows); setTerms(termRows); setDashboard(totals); })
+      .catch(e => toast.error(errorMessage(e)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const chooseYear = async (value: string) => {
+    setYear(value); setTerm('');
+    try { setTerms(await fees.getTerms(value || undefined)); }
+    catch (e) { toast.error(errorMessage(e)); setTerms([]); }
+  };
+
+  if (loading && !dashboard) return <Loading />;
+  const d = dashboard;
+  const cards = [
+    ['Total billed', money(d?.totalBilled)], ['Total paid', money(d?.totalPaid)],
+    ['Outstanding balance', money(d?.totalBalance)], ['Total credit', money(d?.totalCredit)],
+    ['Students', d?.studentCount ?? 0], ['Billed students', d?.billedStudentCount ?? 0],
+    ['Active charges', d?.activeChargeCount ?? 0], ['Payments', d?.paymentCount ?? 0],
+    ['Published structures', d?.publishedFeeStructures ?? 0]
+  ];
+  return <div className="space-y-4"><Panel><div className="grid gap-3 sm:grid-cols-3"><Select value={year} onChange={chooseYear}><option value="">All academic years</option>{years.map(y=><option key={y.id} value={y.id}>{y.yearName}</option>)}</Select><Select value={term} onChange={setTerm}><option value="">All terms</option>{terms.map(t=><option key={t.id} value={t.id}>{t.termName.replace('_',' ')}</option>)}</Select><Button disabled={loading} onClick={()=>loadDashboard()}>{loading?<Loader2 className="mr-2 size-4 animate-spin"/>:<RefreshCw className="mr-2 size-4"/>}Apply filters</Button></div></Panel><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{cards.map(([label,value])=><Card key={label} className="p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-blue-950">{value}</p></Card>)}</div><div className={`rounded-xl border p-4 text-sm ${d?.configurationReady?'border-emerald-200 bg-emerald-50 text-emerald-900':'border-amber-200 bg-amber-50 text-amber-900'}`}><b>{d?.configurationReady?'Ready for billing':'Configuration incomplete'}</b><p className="mt-1">{d?.readinessMessage || 'Configure and publish a fee structure before billing.'}</p><p className="mt-2 text-xs">{d?.configuredFeeStructures ?? 0} configured · {d?.publishedFeeStructures ?? 0} published · {d?.draftFeeStructures ?? 0} draft</p></div></div>;
+}
+
+function AcademicCalendar() {
+  const [yearRevision,setYearRevision]=useState(0);
+  return <div className="space-y-8"><section className="space-y-4"><div><h2 className="text-xl font-bold text-slate-900">Academic Years</h2><p className="text-sm text-slate-500">Create the yearly calendar and choose which year is active.</p></div><Years onChanged={()=>setYearRevision(value=>value+1)} /></section><section className="space-y-4 border-t border-slate-200 pt-7"><div><h2 className="text-xl font-bold text-slate-900">Academic Terms</h2><p className="text-sm text-slate-500">Configure terms inside the selected academic year.</p></div><Terms key={yearRevision} /></section></div>;
+}
+
+function Years({ onChanged }: { onChanged?: () => void }) {
+  const blank = { yearName: '', startDate: '', endDate: '', active: false };
+  const [rows,setRows]=useState<fees.AcademicYear[]>([]), [form,setForm]=useState<fees.AcademicYearRequest>(blank), [edit,setEdit]=useState(''), [loading,setLoading]=useState(true), [pendingYear,setPendingYear]=useState<fees.AcademicYear|null>(null);
+  const load=async()=>{setLoading(true);try{setRows(await fees.getAcademicYears());}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}}; useEffect(()=>{void load();},[]);
+  const save=async(e:React.FormEvent)=>{e.preventDefault();try{edit?await fees.updateAcademicYear(edit,form):await fees.createAcademicYear(form);toast.success(`Academic year ${edit?'updated':'created'}`);setForm(blank);setEdit('');await load();onChanged?.();}catch(x){toast.error(errorMessage(x));}};
+  const activate=async(year:fees.AcademicYear)=>{try{await fees.activateAcademicYear(year.id);toast.success(`${year.yearName} is now the active academic year.`);setPendingYear(null);await load();onChanged?.();}catch(e){toast.error(errorMessage(e));}};
+  const requestActivation=(year:fees.AcademicYear)=>{const startsInFuture=new Date(`${year.startDate}T00:00:00`) > new Date();startsInFuture?setPendingYear(year):void activate(year);};
+  return <><Panel><form onSubmit={save} className="grid gap-3 md:grid-cols-5"><Field required placeholder="Year (2026)" value={form.yearName} onChange={e=>setForm({...form,yearName:e.target.value})}/><Field required type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/><Field required type="date" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})}/><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.active} onChange={e=>setForm({...form,active:e.target.checked})}/> Active</label><Button>{edit?'Update year':'Create year'}</Button></form></Panel>{loading?<Loading/>:<Table headers={['Year','Start','End','Status','Actions']} rows={rows.map(r=>[r.yearName,r.startDate,r.endDate,r.active?'Active':'Inactive',<div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>{setEdit(r.id);setForm({...r});}}>Edit</Button>{!r.active&&<Button size="sm" onClick={()=>requestActivation(r)}>Set active</Button>}</div>])}/>}<RiskConfirmation open={Boolean(pendingYear)} title="Activate a future academic year?" description={`${pendingYear?.yearName || 'This academic year'} does not begin until ${pendingYear ? new Date(`${pendingYear.startDate}T00:00:00`).toLocaleDateString('en-KE',{dateStyle:'long'}) : ''}. Activating it now will replace the currently active year across fee workflows.`} onCancel={()=>setPendingYear(null)} onContinue={()=>pendingYear&&activate(pendingYear)}/></>;
+}
+
+function Terms() {
+  const blank:fees.AcademicTermRequest={academicYearId:'',termName:'TERM_1',startDate:'',endDate:''}; const [years,setYears]=useState<fees.AcademicYear[]>([]),[rows,setRows]=useState<fees.AcademicTerm[]>([]),[form,setForm]=useState(blank),[edit,setEdit]=useState(''),[loading,setLoading]=useState(true),[pendingTerm,setPendingTerm]=useState<fees.AcademicTerm|null>(null);
+  const load=async()=>{setLoading(true);try{const y=await fees.getAcademicYears();setYears(y);const yearId=form.academicYearId||(y.find(x=>x.active)?.id||y[0]?.id||'');if(!form.academicYearId&&yearId){setForm(prev=>({...prev,academicYearId:yearId}));return;}setRows(yearId?await fees.getTerms(yearId):[]);}catch(e){toast.error(errorMessage(e));setRows([]);}finally{setLoading(false);}}; useEffect(()=>{void load();},[form.academicYearId]);
+  const save=async(e:React.FormEvent)=>{e.preventDefault();try{edit?await fees.updateTerm(edit,form):await fees.createTerm(form);toast.success(`Term ${edit?'updated':'created'}`);setEdit('');await load();}catch(x){toast.error(errorMessage(x));}};
+  const close=async(term:fees.AcademicTerm)=>{try{await fees.closeTerm(term.id);toast.success(`${term.termName.replace('_',' ')} has been closed.`);setPendingTerm(null);await load();}catch(e){toast.error(errorMessage(e));}};
+  const requestClose=(term:fees.AcademicTerm)=>{const endsInFuture=new Date(`${term.endDate}T23:59:59`) > new Date();endsInFuture?setPendingTerm(term):void close(term);};
+  const activate=async(term:fees.AcademicTerm)=>{try{await fees.activateTerm(term.id);await load();}catch(e){toast.error(errorMessage(e));}};
+  return <><Panel><form onSubmit={save} className="grid gap-3 md:grid-cols-5"><Select required value={form.academicYearId} onChange={v=>setForm({...form,academicYearId:v})}><option value="">Academic year</option>{years.map(y=><option key={y.id} value={y.id}>{y.yearName}</option>)}</Select><Select value={form.termName} onChange={v=>setForm({...form,termName:v as fees.TermName})}>{['TERM_1','TERM_2','TERM_3'].map(v=><option key={v}>{v.replace('_',' ')}</option>)}</Select><Field required type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/><Field required type="date" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})}/><Button>{edit?'Update term':'Create term'}</Button></form></Panel>{loading?<Loading/>:<Table headers={['Term','Start','End','Status','Actions']} rows={rows.map(r=>[r.termName.replace('_',' '),r.startDate,r.endDate,r.status,<div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>{setEdit(r.id);setForm({academicYearId:r.academicYearId,termName:r.termName,startDate:r.startDate,endDate:r.endDate});}}>Edit</Button>{!r.active&&r.status!=='CLOSED'&&<Button size="sm" onClick={()=>activate(r)}>Activate</Button>}{r.status==='ACTIVE'&&<Button size="sm" variant="outline" onClick={()=>requestClose(r)}>Close</Button>}</div>])}/>}<RiskConfirmation open={Boolean(pendingTerm)} title="Close this term before its end date?" description={`${pendingTerm?.termName.replace('_',' ') || 'This term'} is scheduled to end on ${pendingTerm ? new Date(`${pendingTerm.endDate}T00:00:00`).toLocaleDateString('en-KE',{dateStyle:'long'}) : ''}. Closing it early can affect billing and active-term workflows.`} onCancel={()=>setPendingTerm(null)} onContinue={()=>pendingTerm&&close(pendingTerm)}/></>;
+}
+
+function Structures() {
+  const blank:fees.FeeStructureRequest={academicYearId:'',termId:'',classGroup:'ECD_NURSERY',name:''}; const itemBlank:fees.FeeItemRequest={itemName:'',amount:0,itemType:'COMPULSORY',description:''};
+  const [years,setYears]=useState<fees.AcademicYear[]>([]),[terms,setTerms]=useState<fees.AcademicTerm[]>([]),[rows,setRows]=useState<fees.FeeStructure[]>([]),[form,setForm]=useState(blank),[edit,setEdit]=useState(''),[selected,setSelected]=useState<fees.FeeStructure|null>(null),[item,setItem]=useState(itemBlank),[itemEdit,setItemEdit]=useState('');
+  const load=async()=>{try{const y=await fees.getAcademicYears();const yearId=form.academicYearId||(y.find(x=>x.active)?.id||y[0]?.id||'');const t=yearId?await fees.getTerms(yearId):[];const termId=form.termId||(t.find(x=>x.active)?.id||t[0]?.id||'');const s=yearId&&termId?await fees.getFeeStructures({academicYearId:yearId,termId}):[];setYears(y);setTerms(t);setForm(prev=>({...prev,academicYearId:yearId,termId}));setRows(s);if(selected){const fresh=s.find(x=>x.id===selected.id);if(fresh)setSelected(fresh);}}catch(e){toast.error(errorMessage(e));setRows([]);}};useEffect(()=>{void load();},[]);
+  const save=async(e:React.FormEvent)=>{e.preventDefault();try{edit?await fees.updateFeeStructure(edit,form):await fees.createFeeStructure(form);toast.success('Fee structure saved');setEdit('');setForm(blank);await load();}catch(x){toast.error(errorMessage(x));}};
+  const saveItem=async(e:React.FormEvent)=>{e.preventDefault();if(!selected)return;try{itemEdit?await fees.updateFeeItem(selected.id,itemEdit,item):await fees.addFeeItem(selected.id,item);toast.success('Fee item saved');setItem(itemBlank);setItemEdit('');setSelected(await fees.getFeeStructure(selected.id));await load();}catch(x){toast.error(errorMessage(x));}};
+  return <><Panel><form onSubmit={save} className="grid gap-3 md:grid-cols-5"><Select required value={form.academicYearId} onChange={v=>setForm({...form,academicYearId:v})}><option value="">Academic year</option>{years.map(y=><option key={y.id} value={y.id}>{y.yearName}</option>)}</Select><Select required value={form.termId} onChange={v=>setForm({...form,termId:v})}><option value="">Term</option>{terms.map(t=><option key={t.id} value={t.id}>{t.termName.replace('_',' ')}</option>)}</Select><Select value={form.classGroup} onChange={v=>setForm({...form,classGroup:v as fees.ClassGroup})}>{['ECD_NURSERY','LOWER_PRIMARY','UPPER_PRIMARY'].map(v=><option key={v}>{v}</option>)}</Select><Field required placeholder="Structure name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/><Button>{edit?'Update':'Create'} structure</Button></form></Panel><Table headers={['Name','Class group','Compulsory','Optional','Status','Actions']} rows={rows.map(r=>[r.name,r.classGroup,money(r.totalCompulsory),money(r.totalOptional),r.status,<div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>setSelected(r)}>Items</Button><Button size="sm" variant="outline" onClick={()=>{setEdit(r.id);setForm({academicYearId:r.academicYearId,termId:r.termId,classGroup:r.classGroup,name:r.name});}}>Edit</Button>{r.status==='DRAFT'&&<Button size="sm" onClick={async()=>{await fees.publishFeeStructure(r.id);await load();}}>Publish</Button>}<Button size="sm" variant="outline" onClick={async()=>{await fees.duplicateFeeStructure(r.id);await load();}}>Duplicate</Button>{r.status!=='ARCHIVED'&&<Button size="sm" variant="outline" onClick={async()=>{await fees.archiveFeeStructure(r.id);await load();}}>Archive</Button>}</div>])}/>{selected&&<Panel><div className="flex items-center justify-between"><h2 className="font-bold">{selected.name} items</h2><Button variant="outline" onClick={()=>setSelected(null)}>Close</Button></div><form onSubmit={saveItem} className="grid gap-3 md:grid-cols-5"><Field required placeholder="Item name" value={item.itemName} onChange={e=>setItem({...item,itemName:e.target.value})}/><Field required type="number" min="0" value={item.amount} onChange={e=>setItem({...item,amount:Number(e.target.value)})}/><Select value={item.itemType} onChange={v=>setItem({...item,itemType:v as fees.FeeItemType})}>{['COMPULSORY','OPTIONAL','ONE_TIME'].map(v=><option key={v}>{v}</option>)}</Select><Field placeholder="Description" value={item.description||''} onChange={e=>setItem({...item,description:e.target.value})}/><Button>{itemEdit?'Update':'Add'} item</Button></form><Table headers={['Item','Amount','Type','Description','Actions']} rows={(selected.items||[]).map(i=>[i.itemName,money(i.amount),i.itemType,i.description||'—',<div className="flex gap-2"><Button size="sm" variant="outline" onClick={()=>{setItemEdit(i.id);setItem({itemName:i.itemName,amount:i.amount,itemType:i.itemType,appliesToClassGroup:i.appliesToClassGroup,description:i.description});}}>Edit</Button><Button size="sm" variant="outline" onClick={async()=>{await fees.deleteFeeItem(selected.id,i.id);setSelected(await fees.getFeeStructure(selected.id));}}><Trash2 className="size-4"/></Button></div>])}/></Panel>}</>;
+}
+
+function StudentPicker({ onPick, selectedId }: { onPick:(s:Student)=>void; selectedId?: string }) {
+  const [query,setQuery]=useState(''),[students,setStudents]=useState<Student[]>([]),[loading,setLoading]=useState(true);
+  useEffect(()=>{getStudents().then(setStudents).catch(e=>toast.error(errorMessage(e))).finally(()=>setLoading(false));},[]);
+  const normalized=query.trim().toLowerCase();
+  const recent=[...students].sort((a,b)=>String(b.registeredDate||'').localeCompare(String(a.registeredDate||''))).slice(0,10);
+  const visible=normalized?students.filter(student=>[student.fullName,student.admissionNumber,student.nemisNumber,student.studentClass].some(value=>String(value||'').toLowerCase().includes(normalized))):recent;
+  return <Panel><div><h2 className="font-bold text-slate-900">Find a student</h2><p className="text-sm text-slate-500">{normalized?`${visible.length} matching learner${visible.length===1?'':'s'}`:'10 most recently registered learners'}</p></div><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search name, admission number, NEMIS or class"/>{loading?<div className="flex justify-center p-8"><Loader2 className="size-5 animate-spin"/></div>:visible.length?<div className="grid gap-2 sm:grid-cols-2">{visible.map(student=>{const selected=student.id===selectedId;return <button key={student.id} onClick={()=>onPick(student)} aria-pressed={selected} className={`rounded-xl border p-3 text-left transition ${selected?'border-blue-700 bg-blue-50 ring-2 ring-blue-200':'hover:border-blue-500 hover:bg-blue-50'}`}><div className="flex items-start justify-between gap-2"><span><b className="block">{student.fullName}</b><span className="text-xs text-slate-500">{student.admissionNumber} · {student.studentClass}</span></span>{selected&&<span className="rounded-full bg-blue-700 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">Selected</span>}</div></button>;})}</div>:<Empty>No learners match this search.</Empty>}</Panel>;
+}
+
+type BulkOption = { optionName: string; selected: boolean; amountOverride?: number };
+const blankBulkOptions = (): BulkOption[] => fees.STANDARD_FEE_OPTIONS.map(({optionName})=>({optionName,selected:false}));
+const resolveClassGroup = (studentClass?: string): fees.ClassGroup => { const value=String(studentClass||'').toLowerCase(); if(value.includes('ecd')||value.includes('nursery')||value.includes('pp'))return 'ECD_NURSERY'; if(value.includes('4')||value.includes('5')||value.includes('6')||value.includes('upper'))return 'UPPER_PRIMARY'; return 'LOWER_PRIMARY'; };
+
+function Options() {
+  const [years,setYears]=useState<fees.AcademicYear[]>([]),[terms,setTerms]=useState<fees.AcademicTerm[]>([]),[year,setYear]=useState(''),[term,setTerm]=useState('');
+  const [students,setStudents]=useState<Student[]>([]),[query,setQuery]=useState(''),[selectedIds,setSelectedIds]=useState<Set<string>>(new Set()),[saving,setSaving]=useState(false),[loadingStudents,setLoadingStudents]=useState(true);
+  const [options,setOptions]=useState<BulkOption[]>(blankBulkOptions);
+  useEffect(()=>{Promise.all([fees.getAcademicYears(),fees.getTerms(),getStudents()]).then(([yearRows,termRows,studentRows])=>{setYears(yearRows);setTerms(termRows);setStudents(studentRows);const activeYear=yearRows.find(item=>item.active);const activeTerm=termRows.find(item=>item.active);setYear(activeYear?.id||'');setTerm(activeTerm?.id||'');}).catch(e=>toast.error(errorMessage(e))).finally(()=>setLoadingStudents(false));},[]);
+  const resetSelections=()=>{setSelectedIds(new Set());setOptions(blankBulkOptions());};
+  const changeYear=async(value:string)=>{setYear(value);setTerm('');resetSelections();try{setTerms(await fees.getTerms(value||undefined));}catch(e){toast.error(errorMessage(e));}};
+  const normalized=query.trim().toLowerCase();
+  const recent=[...students].sort((a,b)=>String(b.registeredDate||'').localeCompare(String(a.registeredDate||''))).slice(0,10);
+  const visible=normalized?students.filter(student=>[student.fullName,student.admissionNumber,student.nemisNumber,student.studentClass].some(value=>String(value||'').toLowerCase().includes(normalized))):recent;
+  const toggleStudent=(id:string)=>setSelectedIds(previous=>{const next=new Set(previous);next.has(id)?next.delete(id):next.add(id);return next;});
+  const selectedOptions=options.filter(option=>option.selected);
+  const save=async()=>{if(!year||!term)return toast.error('Select an academic year and term.');if(!selectedOptions.length)return toast.error('Select at least one fee option.');if(!selectedIds.size)return toast.error('Select at least one learner.');setSaving(true);let completed=0;try{const selectedStudents=students.filter(student=>selectedIds.has(student.id));const groups=[...new Set(selectedStudents.map(student=>resolveClassGroup(student.studentClass)))];const structures=await fees.getFeeStructures({academicYearId:year,termId:term});for(const group of groups){const structure=structures.find(item=>item.classGroup===group&&item.status==='PUBLISHED');if(!structure)throw new Error(`No published ${group.replaceAll('_',' ')} fee structure exists for the selected term.`);for(const selectedOption of selectedOptions){const existing=structure.items?.find(item=>item.itemName.trim().toLowerCase()===selectedOption.optionName.trim().toLowerCase());if(!existing){const definition=fees.STANDARD_FEE_OPTIONS.find(item=>item.optionName===selectedOption.optionName)!;await fees.addFeeItem(structure.id,{itemName:selectedOption.optionName,amount:definition.defaultAmount,itemType:'OPTIONAL',appliesToClassGroup:group,description:'Student-selectable fee option'});}}}for(const studentId of selectedIds){await fees.updateStudentFeeOptions(studentId,{academicYearId:year,termId:term,options:selectedOptions.map(({optionName,amountOverride})=>({optionName,enabled:true,amountOverride}))});completed++;}toast.success(`${selectedOptions.length} option${selectedOptions.length===1?'':'s'} applied to ${completed} learner${completed===1?'':'s'}. Preview bills again to see the optional totals.`);resetSelections();setQuery('');}catch(e){toast.error(`${completed} learners updated before the error: ${errorMessage(e)}`);}finally{setSaving(false);}};
+  return <div className="space-y-4">
+    <Panel><div><span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">STEP 1</span><h2 className="mt-3 text-lg font-bold">Choose the billing period</h2></div><div className="grid gap-3 sm:grid-cols-2"><Select value={year} onChange={changeYear}><option value="">Academic year</option>{years.map(item=><option key={item.id} value={item.id}>{item.yearName}</option>)}</Select><Select value={term} onChange={value=>{setTerm(value);resetSelections();}}><option value="">Term</option>{terms.map(item=><option key={item.id} value={item.id}>{item.termName.replace('_',' ')}</option>)}</Select></div></Panel>
+    <Panel><div><span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">STEP 2</span><h2 className="mt-3 text-lg font-bold">Select options to apply</h2><p className="text-sm text-slate-500">Choose one or several services. An amount override is optional.</p></div><div className="grid gap-3 sm:grid-cols-2">{options.map((option,index)=><div key={option.optionName} className={`rounded-xl border p-4 ${option.selected?'border-blue-600 bg-blue-50':'border-slate-200'}`}><label className="flex cursor-pointer items-center gap-3 font-semibold"><input type="checkbox" className="size-5 accent-blue-700" checked={option.selected} onChange={e=>setOptions(options.map((item,itemIndex)=>itemIndex===index?{...item,selected:e.target.checked}:item))}/>{option.optionName}</label>{option.selected&&<Input className="mt-3" type="number" min="0" placeholder="Custom amount (optional)" value={option.amountOverride??''} onChange={e=>setOptions(options.map((item,itemIndex)=>itemIndex===index?{...item,amountOverride:e.target.value?Number(e.target.value):undefined}:item))}/>}</div>)}</div></Panel>
+    <Panel><div><span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">STEP 3</span><div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-lg font-bold">Select learners</h2><p className="text-sm text-slate-500">{normalized?`${visible.length} results from all ${students.length} learners`:`10 recently registered learners · ${students.length} total`}</p></div><Button variant="outline" onClick={()=>setSelectedIds(new Set(visible.map(student=>student.id)))} disabled={!visible.length}>Select all shown</Button></div></div><Input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search all learners by name, admission, NEMIS or class"/>{loadingStudents?<div className="flex justify-center p-8"><Loader2 className="size-5 animate-spin"/></div>:visible.length?<div className="grid gap-2 sm:grid-cols-2">{visible.map(student=><label key={student.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${selectedIds.has(student.id)?'border-blue-600 bg-blue-50':'hover:border-blue-300'}`}><input type="checkbox" className="size-5 accent-blue-700" checked={selectedIds.has(student.id)} onChange={()=>toggleStudent(student.id)}/><span><b className="block">{student.fullName}</b><small className="text-slate-500">{student.admissionNumber} · {student.studentClass}</small></span></label>)}</div>:<Empty>No learners match this search.</Empty>}</Panel>
+    <Card className="sticky bottom-3 z-10 flex flex-col gap-3 border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between"><div><b>{selectedOptions.length} options · {selectedIds.size} learners selected</b><p className="text-sm text-slate-500">Selections clear automatically after a successful save or period change.</p></div><Button onClick={save} disabled={saving||!selectedOptions.length||!selectedIds.size}>{saving?<Loader2 className="mr-2 size-4 animate-spin"/>:<Save className="mr-2 size-4"/>}Apply selected options</Button></Card>
+  </div>;
+}
+
+function Billing() { const [years,setYears]=useState<fees.AcademicYear[]>([]),[terms,setTerms]=useState<fees.AcademicTerm[]>([]),[year,setYear]=useState(''),[term,setTerm]=useState(''),[group,setGroup]=useState(''),[rows,setRows]=useState<fees.BillingPreview[]>([]),[busy,setBusy]=useState(false); useEffect(()=>{Promise.all([fees.getAcademicYears(),fees.getTerms()]).then(([y,t])=>{setYears(y);setTerms(t);});},[]); const payload={academicYearId:year,classGroup:group||undefined}; const run=async(kind:'preview'|'generate'|'recalculate')=>{if(!year||!term)return toast.error('Select an academic year and term');if(kind==='generate'&&!window.confirm('Generate bills from the current published fee structure?'))return;setBusy(true);try{if(kind==='preview')setRows(await fees.previewBills(term,payload));else if(kind==='generate'){const r=await fees.generateBills(term,payload);toast.success(r.message||`${r.generatedCount} bills generated`);}else{const r=await fees.recalculateTerm(term);toast.success(r.message||'Balances recalculated');}}catch(e){toast.error(errorMessage(e));}finally{setBusy(false);}}; return <><Panel><div className="grid gap-3 sm:grid-cols-3"><Select value={year} onChange={setYear}><option value="">Academic year</option>{years.map(y=><option key={y.id} value={y.id}>{y.yearName}</option>)}</Select><Select value={term} onChange={setTerm}><option value="">Term</option>{terms.map(t=><option key={t.id} value={t.id}>{t.termName}</option>)}</Select><Select value={group} onChange={setGroup}><option value="">All class groups</option>{['ECD_NURSERY','LOWER_PRIMARY','UPPER_PRIMARY'].map(v=><option key={v}>{v}</option>)}</Select></div><div className="flex flex-wrap gap-2"><Button disabled={busy} variant="outline" onClick={()=>run('preview')}>Preview</Button><Button disabled={busy} onClick={()=>run('generate')}>Generate bills</Button><Button disabled={busy} variant="outline" onClick={()=>run('recalculate')}><RefreshCw className="mr-2 size-4"/>Recalculate</Button></div></Panel>{rows.length?<Table headers={['Student','Admission','Class','Compulsory','Optional','Previous','Final balance']} rows={rows.map(r=>[r.fullName,r.admissionNumber,r.studentClass,money(r.compulsoryTotal),money(r.optionalTotal),money(r.previousBalance),money(r.finalBalance)])}/>:<Empty>Preview bills before generating them.</Empty>}</>; }
+
+function Statements() {
+  const [student,setStudent]=useState<Student|null>(null),[years,setYears]=useState<fees.AcademicYear[]>([]),[terms,setTerms]=useState<fees.AcademicTerm[]>([]),[year,setYear]=useState(''),[term,setTerm]=useState(''),[statement,setStatement]=useState<fees.StudentStatement|null>(null),[loading,setLoading]=useState(false);
+  useEffect(()=>{Promise.all([fees.getAcademicYears(),fees.getTerms()]).then(([yearRows,termRows])=>{setYears(yearRows);setTerms(termRows);}).catch(e=>toast.error(errorMessage(e)));},[]);
+  const selectStudent=(value:Student)=>{setStudent(value);setStatement(null);setYear('');setTerm('');};
+  const load=async(recalculate=false)=>{if(!student)return;setLoading(true);try{setStatement(recalculate?await fees.recalculateStudent(student.id):await fees.getStudentStatement(student.id,year||undefined,term||undefined));}catch(e){toast.error(errorMessage(e));}finally{setLoading(false);}};
+  return <><StudentPicker selectedId={student?.id} onPick={selectStudent}/>{student&&<Panel><div className="rounded-xl border border-blue-200 bg-blue-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-700">Selected learner</p><h2 className="mt-1 text-xl font-bold text-slate-950">Viewing fee statement for {student.fullName}</h2><p className="mt-1 text-sm text-slate-600">{student.admissionNumber} · {student.studentClass}</p></div><div className="grid gap-3 sm:grid-cols-4"><Select value={year} onChange={setYear}><option value="">All years</option>{years.map(item=><option key={item.id} value={item.id}>{item.yearName}</option>)}</Select><Select value={term} onChange={setTerm}><option value="">All terms</option>{terms.map(item=><option key={item.id} value={item.id}>{item.termName.replace('_',' ')}</option>)}</Select><Button disabled={loading} onClick={()=>load()}>{loading?<Loader2 className="mr-2 size-4 animate-spin"/>:null}Load statement</Button><Button disabled={loading} variant="outline" onClick={()=>load(true)}>Recalculate</Button></div>{statement?<><div className="grid gap-3 sm:grid-cols-3">{[['Total billed',statement.totalBilled],['Total paid',statement.totalPaid],['Balance',statement.balance]].map(([label,value])=><div className="rounded-lg bg-slate-50 p-4" key={label}><small>{label}</small><b className="mt-1 block text-xl">{money(Number(value))}</b></div>)}</div><h3 className="font-bold">Charges</h3><Table headers={['Date','Term','Description','Type','Amount','Status']} rows={statement.charges.map(charge=>[charge.createdAt,charge.termName,charge.description,charge.chargeType,money(charge.amount),charge.status])}/><h3 className="font-bold">Payments</h3><Table headers={['Date','Method','Transaction','Reference','Amount']} rows={statement.payments.map(payment=>[payment.paidAt,payment.paymentMethod,payment.transactionId||'—',payment.reference||'—',money(payment.amount)])}/></>:<Empty>Choose filters if needed, then load the statement for {student.fullName}.</Empty>}</Panel>}</>;
+}
+
+function Payments({ initialStudent }: { initialStudent?: Student }) { const [student,setStudent]=useState<Student|null>(initialStudent||null),[years,setYears]=useState<fees.AcademicYear[]>([]),[terms,setTerms]=useState<fees.AcademicTerm[]>([]),[form,setForm]=useState<Omit<fees.ManualPaymentRequest,'studentId'>>({academicYearId:'',termId:'',amount:0,paymentMethod:'CASH',reference:'',notes:'',paidAt:''}); useEffect(()=>{Promise.all([fees.getAcademicYears(),fees.getTerms()]).then(([y,t])=>{setYears(y);setTerms(t);const activeYear=y.find(item=>item.active);const activeTerm=t.find(item=>item.active);setForm(previous=>({...previous,academicYearId:activeYear?.id||'',termId:activeTerm?.id||''}));});},[]); useEffect(()=>{if(initialStudent)setStudent(initialStudent);},[initialStudent?.id]); const save=async(e:React.FormEvent)=>{e.preventDefault();if(!student)return;try{await fees.recordManualPayment({...form,studentId:student.id,paidAt:form.paidAt||undefined});toast.success('Payment recorded successfully');setForm({...form,amount:0,reference:'',notes:''});}catch(x){toast.error(errorMessage(x));}}; return <><StudentPicker selectedId={student?.id} onPick={setStudent}/>{student&&<Panel><div className="rounded-xl border border-blue-200 bg-blue-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-blue-700">Selected learner</p><h2 className="mt-1 text-xl font-bold">Record payment for {student.fullName}</h2><p className="mt-1 text-sm text-slate-600">{student.admissionNumber} · {student.studentClass}</p></div><form onSubmit={save} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Select required value={form.academicYearId} onChange={v=>setForm({...form,academicYearId:v})}><option value="">Academic year</option>{years.map(y=><option key={y.id} value={y.id}>{y.yearName}</option>)}</Select><Select required value={form.termId} onChange={v=>setForm({...form,termId:v})}><option value="">Term</option>{terms.map(t=><option key={t.id} value={t.id}>{t.termName}</option>)}</Select><Select value={form.paymentMethod} onChange={v=>setForm({...form,paymentMethod:v as any})}>{['CASH','BANK','MANUAL'].map(v=><option key={v}>{v}</option>)}</Select><Field required type="number" min="1" value={form.amount} onChange={e=>setForm({...form,amount:Number(e.target.value)})}/><Field placeholder="Reference" value={form.reference} onChange={e=>setForm({...form,reference:e.target.value})}/><Field placeholder="Notes" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/><Field type="datetime-local" value={form.paidAt} onChange={e=>setForm({...form,paidAt:e.target.value})}/><Button>Record payment</Button></form><div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">The backend currently exposes payment creation but not a payment-ledger list endpoint. Recorded payments are visible in the student statement.</div></Panel>}</>; }
+
+function Table({headers,rows}:{headers:string[];rows:React.ReactNode[][]}) { return <Card className="overflow-hidden"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-slate-50"><tr>{headers.map(h=><th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i} className="border-t">{r.map((c,j)=><td key={j} className="px-4 py-3 align-top">{c}</td>)}</tr>)}</tbody></table>{!rows.length&&<Empty>No records found.</Empty>}</div></Card>; }

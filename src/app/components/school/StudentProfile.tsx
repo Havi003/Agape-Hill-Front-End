@@ -6,7 +6,6 @@ import { Card } from '../ui/card';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { Student } from './StudentRegistration';
 import { FeeStatusCards } from './FeeStatusCards';
-import { FeeManagementDialog } from './FeeManagementDialog';
 import { NextOfKinDialog } from './NextOfKinDialog';
 import schoolLogo from '../../imports/school_logo.png';
 
@@ -20,10 +19,11 @@ import {
 interface StudentProfileProps {
   student: Student;
   onClose: () => void;
+  onManageFees: (student: Student) => void;
   onRefreshParentList?: () => void; // Optional fallback to tell the main list to refresh
 }
 
-export function StudentProfile({ student: initialStudent, onClose, onRefreshParentList }: StudentProfileProps) {
+export function StudentProfile({ student: initialStudent, onClose, onManageFees, onRefreshParentList }: StudentProfileProps) {
   // Use local state to make mutations immediate and reactive
   const [student, setStudent] = useState<Student>(initialStudent);
   
@@ -36,7 +36,6 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
     address: 'Loading...'
   });
 
-  const [showFeeManagement, setShowFeeManagement] = useState(false);
   const [showNextOfKinEdit, setShowNextOfKinEdit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingKin, setIsLoadingKin] = useState(true);
@@ -298,7 +297,7 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowFeeManagement(true)}
+              onClick={() => onManageFees(student)}
               className="w-full sm:w-auto"
             >
               <DollarSign className="size-4 mr-2" />
@@ -325,14 +324,6 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
       </div>
 
       {/* Dialog Containers */}
-      {showFeeManagement && (
-        <FeeManagementDialog
-          student={student}
-          onClose={() => setShowFeeManagement(false)}
-          onUpdateFees={handleUpdateFees}
-        />
-      )}
-
       {showNextOfKinEdit && (
         <NextOfKinDialog
           student={student}

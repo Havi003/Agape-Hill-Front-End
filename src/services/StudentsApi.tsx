@@ -17,6 +17,7 @@ export interface Student {
   studentGender?: string;
   registeredDate?: string;
   dateOfBirth?: string;
+  nemisNumber?: string;
   feeStatus?: {
     totalBilled: number;
     totalPaid: number;

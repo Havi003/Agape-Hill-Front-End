@@ -9,7 +9,9 @@ import {
   ChevronDown,
   ChevronRight,
   GraduationCap,
-  Calendar // 👈 Added this import
+  Calendar,
+  WalletCards,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
@@ -32,6 +34,13 @@ const CLASSES = [
 export function BrandSidebar({ currentView, onNavigate, onLogout, isMobileOpen, onMobileClose }: BrandSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isClassesOpen, setIsClassesOpen] = useState(false);
+  const [isFeesOpen, setIsFeesOpen] = useState(() => currentView.startsWith('fees-'));
+
+  const feeItems = [
+    ['fees-dashboard', 'Dashboard'], ['fees-years', 'Calendar'],
+    ['fees-structures', 'Fee Structures'], ['fees-options', 'Optional Fees'],
+    ['fees-billing', 'Generate Bills'], ['fees-statements', 'Student Statements'], ['fees-payments', 'Payments Ledger']
+  ];
 
   // 👈 Added School Events to the main static menu items array
   const menuItems = [
@@ -171,6 +180,12 @@ export function BrandSidebar({ currentView, onNavigate, onLogout, isMobileOpen, 
             })}
           </div>
         )}
+
+        <button onClick={() => { setIsFeesOpen(!isFeesOpen); if (!isFeesOpen) onNavigate('fees-dashboard'); }} className={`mt-2 flex w-full items-center justify-between px-6 py-3 transition-colors ${currentView.startsWith('fees-') ? 'border-l-4 border-emerald-300 bg-blue-700/40' : 'hover:bg-blue-700/50'}`}>
+          <div className="flex items-center gap-3"><WalletCards className="size-5 shrink-0" /><span className={`font-medium ${isCollapsed ? 'md:hidden' : ''}`}>Fee Management</span></div>
+          <span className={isCollapsed ? 'md:hidden' : ''}>{isFeesOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</span>
+        </button>
+        {isFeesOpen && <div className={`bg-blue-950/40 py-1 ${isCollapsed ? 'md:hidden' : ''}`}>{feeItems.map(([id,label]) => <button key={id} onClick={() => navigateAndClose(id)} className={`flex w-full items-center gap-2 py-2 pl-12 pr-5 text-left text-sm ${currentView === id ? 'bg-blue-800/70 font-bold text-white' : 'text-blue-200 hover:bg-blue-700/30 hover:text-white'}`}><CreditCard className="size-3.5 shrink-0" />{label}</button>)}</div>}
       </nav>
 
       {/* Logout Button */}
