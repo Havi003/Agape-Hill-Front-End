@@ -27,6 +27,14 @@ export interface Student {
   kinContact?: string;
 }
 
+export interface NextOfKinPayload {
+  name: string;
+  relationship: string;
+  phoneNumber: string;
+  email: string;
+  address: string;
+}
+
 // ✅ FIXED: Safely structured to avoid adding unintended trailing slashes
 export const getStudents = async (search: string = ""): Promise<Student[]> => {
   const res = await api.get('', {
@@ -61,4 +69,17 @@ export const getNextofKinDetails = async (studentId: string) => {
 
   const res = await api.get(`/${studentId}/next-of-kin`);
   return res.data.body; // ✅ consistent
+};
+
+export const updateNextOfKinDetails = async (
+  studentId: string,
+  data: NextOfKinPayload
+): Promise<NextOfKinPayload> => {
+  if (!studentId || !studentId.includes('-')) {
+    console.error("❌ Invalid UUID passed:", studentId);
+    throw new Error("Invalid student ID (UUID expected)");
+  }
+
+  const res = await api.put(`/${studentId}/next-of-kin`, data);
+  return res.data.body;
 };

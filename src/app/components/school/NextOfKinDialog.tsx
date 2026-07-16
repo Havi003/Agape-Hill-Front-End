@@ -1,29 +1,25 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Users } from 'lucide-react';
+import { X, Save, Users, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Student } from './StudentRegistration';
-import { getNextofKinDetails } from '../../../services/StudentsApi';
+import type { NextOfKinPayload } from '../../../services/StudentsApi';
 
 interface NextOfKinDialogProps {
   student: Student;
+  currentKin: NextOfKinPayload;
   onClose: () => void;
   onUpdateNextOfKin: (
     studentId: string,
-    nextOfKin: {
-      kinName: string;
-      kinRelationship: string;
-      kinContact: string;
-      kinEmail: string;
-      kinAddress: string;
-    }
-  ) => void;
+    nextOfKin: NextOfKinPayload
+  ) => Promise<boolean>;
 }
 
 export function NextOfKinDialog({
   student,
+  currentKin,
   onClose,
   onUpdateNextOfKin
 }: NextOfKinDialogProps) {
@@ -37,54 +33,18 @@ export function NextOfKinDialog({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // ✅ SAFE FETCH + PROPER MAPPING
+  // Keep the form aligned with the record already loaded by the profile.
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchKin = async () => {
-      if (!student?.id) return;
-
-      try {
-        setLoading(true);
-
-        const data = await getNextofKinDetails(student.id);
-
-        if (!isMounted) return;
-
-        setFormData({
-          name: data?.name || student.kinName || '',
-          relationship: data?.relationship || student.kinRelationship || '',
-          phoneNumber: data?.phoneNumber || student.kinContact || '',
-          email: data?.email || '',
-          address: data?.address || ''
-        });
-
-      } catch (error) {
-        console.error("Failed to load next of kin:", error);
-
-        // fallback to student data
-        if (isMounted) {
-          setFormData({
-            name: student.kinName || '',
-            relationship: student.kinRelationship || '',
-            phoneNumber: student.kinContact || '',
-            email: student.kinEmail || '',
-            address: student.kinAddress || ''
-          });
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchKin();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [student.id]);
+    setFormData({
+      name: currentKin.name || '',
+      relationship: currentKin.relationship || '',
+      phoneNumber: currentKin.phoneNumber || '',
+      email: currentKin.email || '',
+      address: currentKin.address || ''
+    });
+  }, [student.id, currentKin]);
 
   // ✅ VALIDATION
   const validateForm = () => {
@@ -107,20 +67,22 @@ export function NextOfKinDialog({
   };
 
   // ✅ SUBMIT
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) return;
 
-    onUpdateNextOfKin(student.id, {
-      kinName: formData.name,
-      kinRelationship: formData.relationship,
-      kinContact: formData.phoneNumber,
-      kinEmail: formData.email,
-      kinAddress: formData.address
+    setIsSaving(true);
+    const wasUpdated = await onUpdateNextOfKin(student.id, {
+      name: formData.name.trim(),
+      relationship: formData.relationship.trim(),
+      phoneNumber: formData.phoneNumber.trim(),
+      email: formData.email.trim(),
+      address: formData.address.trim()
     });
+    setIsSaving(false);
 
-    onClose();
+    if (wasUpdated) onClose();
   };
 
   return (
@@ -144,17 +106,10 @@ export function NextOfKinDialog({
             </div>
           </div>
 
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} disabled={isSaving}>
             <X className="size-5" />
           </Button>
         </div>
-
-        {/* LOADING STATE */}
-        {loading && (
-          <p className="text-sm text-gray-500 mb-4">
-            Loading next of kin details...
-          </p>
-        )}
 
         {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,6 +119,7 @@ export function NextOfKinDialog({
             <div>
               <Label>Name *</Label>
               <Input
+                disabled={isSaving}
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -175,6 +131,7 @@ export function NextOfKinDialog({
             <div>
               <Label>Relationship *</Label>
               <Input
+                disabled={isSaving}
                 value={formData.relationship}
                 onChange={(e) =>
                   setFormData({ ...formData, relationship: e.target.value })
@@ -186,6 +143,7 @@ export function NextOfKinDialog({
             <div>
               <Label>Phone Number *</Label>
               <Input
+                disabled={isSaving}
                 value={formData.phoneNumber}
                 onChange={(e) =>
                   setFormData({ ...formData, phoneNumber: e.target.value })
@@ -197,6 +155,7 @@ export function NextOfKinDialog({
             <div>
               <Label>Email *</Label>
               <Input
+                disabled={isSaving}
                 type="email"
                 value={formData.email}
                 onChange={(e) =>
@@ -209,6 +168,7 @@ export function NextOfKinDialog({
             <div className="md:col-span-2">
               <Label>Address *</Label>
               <Input
+                disabled={isSaving}
                 value={formData.address}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
@@ -222,13 +182,13 @@ export function NextOfKinDialog({
           {/* ACTIONS */}
           <div className="flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
 
-            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto" disabled={isSaving}>
               Cancel
             </Button>
 
-            <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 sm:w-auto">
-              <Save className="size-4 mr-2" />
-              Save Changes
+            <Button type="submit" className="w-full bg-blue-900 hover:bg-blue-800 sm:w-auto" disabled={isSaving}>
+              {isSaving ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Save className="size-4 mr-2" />}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
 
           </div>

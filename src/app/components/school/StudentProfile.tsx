@@ -1,5 +1,6 @@
 import { GraduationCap, Calendar, Hash, User, FileText, X, DollarSign, Users, Mail, Phone, MapPin, Edit } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
@@ -10,16 +11,11 @@ import { NextOfKinDialog } from './NextOfKinDialog';
 import schoolLogo from '../../imports/school_logo.png';
 
 // Import the new API functions
-import { getNextofKinDetails } from '../../../services/StudentsApi'; 
-
-// Define an interface for the backend's "body" structure
-interface NextOfKinState {
-  name: string;
-  relationship: string;
-  phoneNumber: string;
-  email: string;
-  address: string;
-}
+import {
+  getNextofKinDetails,
+  updateNextOfKinDetails,
+  type NextOfKinPayload
+} from '../../../services/StudentsApi';
 
 interface StudentProfileProps {
   student: Student;
@@ -32,7 +28,7 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
   const [student, setStudent] = useState<Student>(initialStudent);
   
   // Track Next of Kin state separately using the exact structure from your backend payload
-  const [nextOfKin, setNextOfKin] = useState<NextOfKinState>({
+  const [nextOfKin, setNextOfKin] = useState<NextOfKinPayload>({
     name: 'Loading...',
     relationship: 'Loading...',
     phoneNumber: 'Loading...',
@@ -93,14 +89,16 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
 }, [student.id]);
 
   // Handles updating the kin payload back to the database
-  const handleUpdateNextOfKin = async (studentId: string, kinDetails: NextOfKinState) => {
+  const handleUpdateNextOfKin = async (
+    studentId: string,
+    kinDetails: NextOfKinPayload
+  ): Promise<boolean> => {
     try {
       setIsSubmitting(true);
-      const updatedBody = await apiUpdateNextOfKin(studentId, kinDetails);
+      const updatedBody = await updateNextOfKinDetails(studentId, kinDetails);
       
       // Directly replace state with the structured body returned
       setNextOfKin(updatedBody);
-      setShowNextOfKinEdit(false);
       
       // Optionally sync main student object as well, map keys correctly
       setStudent(prev => ({
@@ -113,8 +111,12 @@ export function StudentProfile({ student: initialStudent, onClose, onRefreshPare
       }));
 
       if (onRefreshParentList) onRefreshParentList();
+      toast.success('Next of kin information updated successfully');
+      return true;
     } catch (error) {
       console.error("Failed to update Next of Kin:", error);
+      toast.error('Could not update next of kin information. Please try again.');
+      return false;
     } finally {
       setIsSubmitting(false);
     }
